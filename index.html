@@ -420,7 +420,7 @@ details[open]>summary{margin-bottom:10px}
       <li id="st-borders" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Check borders<span class="sub"></span></span></li>
       <li id="st-corners" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Check corners<span class="sub"></span></span></li>
       <li id="st-edges" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Check edges<span class="sub"></span></span></li>
-      <li id="st-surface" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Check surfaces<span class="sub"></span></span></li>
+      <li id="st-surface" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Check border surface<span class="sub"></span></span></li>
     </ol>
 
     <div class="mini" id="mini" aria-label="Live result"><b id="miniGrade">-</b><span id="miniLR">L/R -</span><span id="miniTB">T/B -</span></div>
@@ -547,19 +547,19 @@ details[open]>summary{margin-bottom:10px}
           </div>
           <div class="cond" aria-label="Condition">
             <div class="cell">
-              <p class="eyebrow">Corners</p>
+              <p class="eyebrow">Corner whitening</p>
               <p class="lvl l1" id="cCornersLvl">Analysing</p>
               <p class="cap" id="cCornersCap"></p>
               <p class="det" id="cCornersDet"></p>
             </div>
             <div class="cell">
-              <p class="eyebrow">Edges</p>
+              <p class="eyebrow">Edge chipping</p>
               <p class="lvl l1" id="cEdgesLvl">Analysing</p>
               <p class="cap" id="cEdgesCap"></p>
               <p class="det" id="cEdgesDet"></p>
             </div>
             <div class="cell">
-              <p class="eyebrow">Surface</p>
+              <p class="eyebrow">Border specks</p>
               <p class="lvl l1" id="cSurfaceLvl">Analysing</p>
               <p class="cap" id="cSurfaceCap"></p>
               <p class="det" id="cSurfaceDet"></p>
@@ -1278,7 +1278,7 @@ function rotate(){
 
 /* ---------- flow: start screen, steps, tabs ---------- */
 var STEP_IDS=['find','read','borders','corners','edges','surface'];
-var LABELS={find:['Locating the card','Card located'],read:['Reading the card','Card read'],borders:['Checking borders','Borders measured'],corners:['Checking corners','Corners checked'],edges:['Checking edges','Edges checked'],surface:['Checking surfaces','Surfaces checked']};
+var LABELS={find:['Locating the card','Card located'],read:['Reading the card','Card read'],borders:['Checking borders','Borders measured'],corners:['Checking corner whitening','Corner whitening checked'],edges:['Checking edge chipping','Edge chipping checked'],surface:['Checking border surface','Border surface checked']};
 var t0=0;
 function logLine(cls,text){
   var ol=$('scanLog'), li=document.createElement('li'), tm=document.createElement('time'), sp=document.createElement('span');
@@ -1397,14 +1397,14 @@ function render(){
   var g=$('grade');
   g.textContent=(ai?'':'Up to ')+'PSA '+est;
   g.className='grade g'+est;
-  $('basis').textContent=ai?'With AI inspection':'Measured only';
+  $('basis').textContent=ai?'With AI inspection':'Borders only · AI not run';
   var why;
   if(est===10) why=ai?'Centering, measured wear and the AI inspection all look like PSA 10 candidates.':'Centering and measured wear look like PSA 10 candidates.';
   else {
     var nm=lim.length>1?lim.slice(0,-1).join(', ')+' and '+lim[lim.length-1]:lim[0];
     why=nm.charAt(0).toUpperCase()+nm.slice(1)+(lim.length>1?' limit':' limits')+' it to PSA '+est+'.';
   }
-  if(!ai) why+=' This is an upper bound. Grime, creases and scratches on the card face are not measured by pixel analysis alone.';
+  if(!ai) why+=' This is an upper bound from border checks only. Dirt, grime, creases and scratches on the card face need the AI step, which has not run.';
   else if(ai.summary) why+=' '+ai.summary;
   $('why').textContent=why;
   var pl=$('pinLR'), pt=$('pinTB');
@@ -1714,38 +1714,57 @@ async function identify(){
   var ctl=new AbortController(); idCtl=ctl;
   $('idResult').hidden=true; $('identify').disabled=true; $('stopId').hidden=false; $('idNote').textContent='Reading and inspecting the card...';
   S.aiTried=true; setStep('read','run','Reading the printed text'); $('skipAi').hidden=false;
-  try{
-    var resp=await fetch('/api/inspect',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      signal:ctl.signal,
-      body:JSON.stringify({image:b64})
-    });
-    if(idCtl!==ctl) return;
-    if(!resp.ok){
-      var err=await resp.json().catch(function(){return {};});
-      throw {code:resp.status===429?'rate_limited':'api_error',message:err.error||'Server error '+resp.status};
+  var retries=[0,3000,6000], payload=JSON.stringify({image:b64}), lastErr;
+  for(var att=0;att<retries.length;att++){
+    if(retries[att]) {
+      $('idNote').textContent='AI busy, retrying in '+Math.round(retries[att]/1000)+'s...';
+      await new Promise(function(ok){ setTimeout(ok,retries[att]); });
     }
-    var r=await resp.json();
-    idCtl=null; $('stopId').hidden=true; $('identify').disabled=false;
-    $('idNote').textContent='Card image sent for AI reading.';
-    showCard(r); applyInspection(r); render();
-    $('identify').textContent='Run again';
-    $('skipAi').hidden=true;
-    var rd=$('idName').textContent;
-    setStep('read',S.ai?'ok':'fail',S.ai?(rd+(S.ai.cap<10?' · condition caps at PSA '+S.ai.cap:' · no condition cap')):'No usable reading');
-    tryFinish();
-  }catch(e){
     if(idCtl!==ctl) return;
-    idCtl=null; $('stopId').hidden=true;
-    $('skipAi').hidden=true;
-    var aborted=e&&e.name==='AbortError';
-    var msg=aborted?'Skipped':(e&&e.code)==='rate_limited'?'Too many requests. Try again in a moment.':(e&&e.message)||'Something went wrong. Try again.';
-    setStep('read',aborted?'skip':'fail',msg);
-    setTimeout(tryFinish,0);
-    $('identify').disabled=false;
-    $('idNote').textContent=aborted?idIdleNote():msg;
+    try{
+      var resp=await fetch('/api/inspect',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        signal:ctl.signal,
+        body:payload
+      });
+      if(idCtl!==ctl) return;
+      if(resp.status===429||resp.status===503){
+        lastErr={code:'rate_limited',message:'AI service is busy.'};
+        if(att<retries.length-1) continue;
+        throw lastErr;
+      }
+      if(!resp.ok){
+        var err=await resp.json().catch(function(){return {};});
+        throw {code:'api_error',message:err.error||'Server error '+resp.status};
+      }
+      var r=await resp.json();
+      idCtl=null; $('stopId').hidden=true; $('identify').disabled=false;
+      $('idNote').textContent='Card image sent for AI reading.';
+      showCard(r); applyInspection(r); render();
+      $('identify').textContent='Run again';
+      $('skipAi').hidden=true;
+      var rd=$('idName').textContent;
+      setStep('read',S.ai?'ok':'fail',S.ai?(rd+(S.ai.cap<10?' · condition caps at PSA '+S.ai.cap:' · no condition cap')):'No usable reading');
+      tryFinish();
+      return;
+    }catch(e){
+      if(e&&e.name==='AbortError') { lastErr=e; break; }
+      lastErr=e;
+      if(att<retries.length-1&&e&&e.code==='rate_limited') continue;
+      break;
+    }
   }
+  if(idCtl!==ctl) return;
+  idCtl=null; $('stopId').hidden=true;
+  $('skipAi').hidden=true;
+  var aborted=lastErr&&lastErr.name==='AbortError';
+  var msg=aborted?'Skipped':(lastErr&&lastErr.code)==='rate_limited'?'AI is busy. Tap "Run again" to retry.':(lastErr&&lastErr.message)||'Something went wrong. Try again.';
+  setStep('read',aborted?'skip':'fail',msg);
+  setTimeout(tryFinish,0);
+  $('identify').disabled=false;
+  $('identify').textContent='Run again';
+  $('idNote').textContent=aborted?idIdleNote():msg;
 }
 
 $('worn').addEventListener('click',function(){ var s=makeSample(true); S.note='Worn sample loaded. It has corner whitening, edge nicks and a few border scratches.'; S.wantAi=false; startScan(); setSource(s.canvas,s.quad,'Worn sample'); S.cornersOk=true; S.scanReady=true; setStep('find','ok','Sample card'); setStep('read','skip','Not run for samples'); });
