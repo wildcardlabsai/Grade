@@ -300,14 +300,12 @@ details[open]>summary{margin-bottom:10px}
 .chip.sev-moderate{background:color-mix(in srgb,var(--z7) 30%,var(--surface))}
 .chip.sev-major{background:color-mix(in srgb,var(--z6) 34%,var(--surface))}
 
-/* worth grading */
-.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px}
-.net{width:100%;border-collapse:collapse;font-size:13px}
-.net th{font:500 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left}
-.net th,.net td{padding:8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
-.net tr.on td{background:var(--accent-soft)}
-.net .pos{color:var(--z10);font-weight:600}.net .neg{color:var(--z6);font-weight:600}
-.netsum{margin:0;min-height:3em;font-size:14px}
+/* api key */
+.apirow{display:grid;gap:6px}
+.apirow .field{grid-template-columns:1fr auto;align-items:end}
+.apirow .field input{font-size:13px;padding:8px 10px}
+.apirow .field .btn{min-height:38px}
+.apinote{margin:0;font-size:12px;color:var(--muted)}
 .notes{margin:0;padding:0;list-style:none;display:grid;gap:8px;max-width:80ch;font-size:13px;color:var(--muted)}
 
 @media (max-width:820px){
@@ -359,7 +357,10 @@ details[open]>summary{margin-bottom:10px}
       <li><b>Soft, even light</b>No flash. Glare and shadows read as wear.</li>
       <li><b>Square on, card fills the frame</b>Hold the phone above the card, level with it.</li>
     </ul>
-    <label class="check" for="useAi"><input id="useAi" type="checkbox" checked><span>Use AI to read the card and check its condition after I choose a photo. The straightened card image is sent to an AI model for this and counts toward your usage. Turn it off to measure only.</span></label>
+    <div class="apirow">
+      <label class="field" for="apiKey"><span class="eyebrow">Anthropic API key</span><input id="apiKey" type="password" placeholder="sk-ant-..." spellcheck="false" autocomplete="off"></label>
+      <p class="apinote">Paste your key to enable AI card reading and condition inspection. The key stays in your browser and is sent only to the Anthropic API. Leave blank to measure only.</p>
+    </div>
     <p class="try">No card to hand? <button class="btn" id="sample" type="button">Try a sample card</button> <button class="btn" id="worn" type="button">Try a worn sample</button></p>
     <div class="info">
       <section aria-labelledby="ih1">
@@ -459,12 +460,12 @@ details[open]>summary{margin-bottom:10px}
         <section class="panel" id="cardSec" aria-label="Card">
           <div class="panel-head">
             <h2>Card</h2>
-            <p>Reads the printed name and number, then inspects the card for dirt, creases and wear that measuring alone cannot see.</p>
+            <p>Sends the straightened card to the Anthropic API to read the printed name and number, then inspects for dirt, creases and wear that measuring alone cannot see.</p>
           </div>
           <div class="idrow">
             <button class="btn primary" id="identify" type="button" disabled>Read &amp; inspect</button>
             <button class="btn" id="stopId" type="button" hidden>Stop</button>
-            <span class="idnote" id="idNote">Checking AI access...</span>
+            <span class="idnote" id="idNote"></span>
           </div>
           <div id="idResult" hidden>
             <p class="cardname" id="idName"></p>
@@ -567,32 +568,10 @@ details[open]>summary{margin-bottom:10px}
           </div>
         </section>
 
-        <section class="panel" id="worthSec" aria-label="Worth grading">
-          <div class="panel-head">
-            <h2>Worth grading?</h2>
-            <span class="chip" id="exChip">Example values</span>
-            <p>Enter sold prices from the links above and your grading fee. PSA grades shown.</p>
-          </div>
-          <div class="fields">
-            <label class="field" for="vRaw"><span class="eyebrow">Raw (£)</span><input id="vRaw" type="text" inputmode="decimal" value="12"></label>
-            <label class="field" for="v8"><span class="eyebrow">PSA 8 (£)</span><input id="v8" type="text" inputmode="decimal" value="18"></label>
-            <label class="field" for="v9"><span class="eyebrow">PSA 9 (£)</span><input id="v9" type="text" inputmode="decimal" value="35"></label>
-            <label class="field" for="v10"><span class="eyebrow">PSA 10 (£)</span><input id="v10" type="text" inputmode="decimal" value="120"></label>
-            <label class="field" for="vFee"><span class="eyebrow">Grading fee (£)</span><input id="vFee" type="text" inputmode="decimal" value="20"></label>
-          </div>
-          <div class="tablewrap">
-            <table class="net">
-              <thead><tr><th>If it grades</th><th>Sells for</th><th>Net vs raw</th></tr></thead>
-              <tbody id="netRows"></tbody>
-            </table>
-          </div>
-          <p class="netsum" id="netSum"></p>
-        </section>
-
         <details class="panel">
           <summary>How this works and where it falls short</summary>
           <ul class="notes">
-            <li>Finding the card, measuring borders and checking wear all happen on your device. Reading the card and the AI condition check send the straightened card image to an AI model and nothing else.</li>
+            <li>Finding the card, measuring borders and checking wear all happen on your device. Reading the card and the AI condition check send the straightened card image to the Anthropic API using your API key.</li>
             <li>Measured wear covers whitening on corners and edges and specks on the border. It does not see grime, creases or scratches on the card face. The AI condition check looks for those and can only lower the ceiling.</li>
             <li>Every number is an estimate from a photo, not a grade. Glare, flash and soft focus can fool it. Compare against the real card.</li>
             <li>Corner detection works best on a plain, dark surface with nothing overlapping the edges. Expect a few pixels of error, so zoom in with the rings and fine-tune.</li>
@@ -1248,10 +1227,10 @@ function loadFile(file){
       c.width=Math.max(2,Math.round(img.naturalWidth*s)); c.height=Math.max(2,Math.round(img.naturalHeight*s));
       c.getContext('2d').drawImage(img,0,0,c.width,c.height);
       S.note='';
-      S.wantAi=!!$('useAi').checked;
+      S.wantAi=hasApiKey();
       startScan();
       setSource(c,defaultQuad(c.width,c.height),'Your photo');
-      if(!S.wantAi) setStep('read','skip','Switched off');
+      if(!S.wantAi) setStep('read','skip','No API key');
       var id=S.scanId; setTimeout(function(){ if(S.scanId===id&&S.src===c) autoCorners(); },650);
     };
     img.src=rd.result;
@@ -1360,8 +1339,7 @@ function setTab(t){
 // Start the AI step on its own once the card is found and measured, but only for a user's photo and only if they allowed it.
 function maybeAutoAi(){
   if(!S.src||!S.wantAi||S.aiTried||idCtl) return;
-  if(idState==='pending'){ setStep('read','wait','Checking AI access'); return; }
-  if(idState!=='ok'){ S.aiTried=true; setStep('read','skip','Not available here'); return; }
+  if(!hasApiKey()){ S.aiTried=true; setStep('read','skip','No API key'); return; }
   if(!S.cornersOk){ setStep('read','wait','Check the corners, then press Read'); return; }
   S.aiTried=true; identify();
 }
@@ -1419,7 +1397,6 @@ function render(){
   if(!ai) why+=' This is an upper bound. Grime, creases and scratches on the card face are not measured. Run Read & inspect to check them.';
   else if(ai.summary) why+=' '+ai.summary;
   $('why').textContent=why;
-  renderValue();
   var pl=$('pinLR'), pt=$('pinTB');
   pl.textContent='L/R '+Math.round(lr.big); pt.textContent='T/B '+Math.round(tb.big);
   pl.style.left=scalePct(round1(lr.big))+'%'; pt.style.left=scalePct(round1(tb.big))+'%';
@@ -1658,64 +1635,28 @@ function drawMarks(k){
   fctx.restore();
 }
 
-/* ---------- worth grading ---------- */
-function num(id){ var v=parseFloat(String($(id).value).replace(',','.')); return isFinite(v)?v:NaN; }
-function money(v){ return (v<0?'-':'+')+'£'+Math.abs(v).toFixed(2); }
-function renderValue(){
-  var raw=num('vRaw'), v8=num('v8'), v9=num('v9'), v10=num('v10'), fee=num('vFee');
-  var rows=[['PSA 10',v10],['PSA 9',v9],['PSA 8 or lower',isNaN(v8)?raw:v8]];
-  var body=$('netRows'), est=S.est||10, on=est>=10?0:est===9?1:2, nets=[];
-  body.textContent='';
-  rows.forEach(function(r,idx){
-    var net=r[1]-fee-raw; nets.push(net);
-    var tr=document.createElement('tr'); if(idx===on) tr.className='on';
-    var a=document.createElement('td'); a.textContent=r[0];
-    var b=document.createElement('td'); b.textContent=isNaN(r[1])?'-':'£'+r[1].toFixed(2);
-    var c=document.createElement('td'); c.textContent=isNaN(net)?'-':money(net);
-    if(!isNaN(net)) c.className=net>=0?'pos':'neg';
-    tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); body.appendChild(tr);
-  });
-  var sum=$('netSum');
-  if(isNaN(raw)||isNaN(fee)||isNaN(nets[0])||isNaN(nets[1])){ sum.textContent='Enter the raw price, grading fee and the PSA 9 and PSA 10 prices.'; return; }
-  var msg='At your estimated ceiling (PSA '+est+'): '+money(nets[on])+' against selling raw. ';
-  msg+=nets[2]>=0?'It pays off even at PSA 8 or lower.':nets[1]>=0?'It breaks even at PSA 9 or better.':nets[0]>=0?'It only breaks even at PSA 10.':'It does not break even at any grade with these prices.';
-  sum.textContent=msg;
-}
-function saveValues(){
-  try{ localStorage.setItem('dc_values',JSON.stringify(['vRaw','v8','v9','v10','vFee'].map(function(id){ return $(id).value; }))); }catch(e){}
-}
-function loadValues(){
-  try{
-    var v=JSON.parse(localStorage.getItem('dc_values')||'null');
-    if(v&&v.length===5){ ['vRaw','v8','v9','v10','vFee'].forEach(function(id,i){ $(id).value=String(v[i]); }); $('exChip').hidden=true; }
-  }catch(e){}
-}
 
-/* ---------- card recognition (AI model) ---------- */
-var sampleFn=null, idState='pending', idCtl=null;
+/* ---------- card recognition (Anthropic API) ---------- */
+var idState='none', idCtl=null;
 var ID_PROMPT='This image is the front of one Pokémon Trading Card Game card, already cropped and straightened from a photo. Do two jobs: identify the card from its printed text, and inspect its physical condition the way a strict PSA grader would.\n\n'
  +'Reply with only one JSON object with these keys:\n'
  +'{"is_pokemon_card": boolean, "name": string or null, "card_number": string or null, "set_name": string or null, "rarity": string or null, "finish": string or null, "language": string or null, "hp": number or null, "confidence": "high" | "medium" | "low", "notes": string, "condition": {"max_psa": integer from 1 to 10, "summary": string, "defects": [{"where": string, "type": string, "severity": "minor" | "moderate" | "major"}], "photo_limits": string}}\n\n'
  +'Identification rules: card_number is exactly as printed, for example "125/197". Use null for anything you cannot read or are not sure of. Do not guess the set from the artwork alone: if the number or set symbol is unreadable, set set_name to null and lower the confidence. finish is one of "holo", "reverse holo", "non-holo", "full art", "unknown". notes is one short sentence on what was hard to read. If the image is not a Pokémon card, set is_pokemon_card to false.\n\n'
  +'Condition rules: look at the corners, the edges, the border and the whole printed face. Report only defects you can actually see: whitening, chipping or rounding on corners and edges; creases, dents and bends; scratches, scuffs and print lines; dirt, grime, smudges, stains, ink marks, water damage or yellowing; cracked foil. Do not assume the card is clean. A photo can hide defects but cannot add them. "where" is short, such as "bottom edge, centre" or "text box, lower right". List the most important defects first, at most 8. max_psa is the highest PSA grade this card could plausibly receive on condition alone, ignoring centering. Anchors: 10 means no flaw you can see; 9 allows one or two very faint flaws; 8 allows light whitening on a few corners or edges, or faint scuffing; 7 means minor but obvious wear; 6 and 5 mean clear wear on corners and edges, or noticeable scuffs, dirt or a light crease; 4 or lower means creases, heavy dirt, stains or heavy edge wear. summary is one short sentence. photo_limits is one short sentence on anything that stopped you judging well (glare, blur, low resolution), or an empty string.';
+function getApiKey(){ return ($('apiKey').value||'').trim(); }
+function hasApiKey(){ return getApiKey().length>10; }
 function idIdleNote(){
-  return idState==='pending'?'Checking AI access...':idState==='ok'?'Sends the straightened card image to an AI model to identify it and inspect its condition. Counts toward your usage.':'Reading the card needs AI access, which this view does not have.';
+  return hasApiKey()?'Sends the straightened card image to the Anthropic API to identify it and inspect its condition.':'Enter your Anthropic API key on the start screen to enable card reading.';
 }
-function updateIdUI(){ $('identify').disabled=idState!=='ok'; if(!idCtl&&$('idResult').hidden) $('idNote').textContent=idIdleNote(); if(S.src&&S.cornersOk) maybeAutoAi(); }
+function updateIdUI(){ idState=hasApiKey()?'ok':'none'; $('identify').disabled=idState!=='ok'; if(!idCtl&&$('idResult').hidden) $('idNote').textContent=idIdleNote(); if(S.src&&S.cornersOk) maybeAutoAi(); }
 function clearId(){
   if(idCtl){ try{ idCtl.abort(); }catch(e){} idCtl=null; }
   S.ai=null; $('aiBox').hidden=true; $('identify').textContent='Read & inspect';
   $('idResult').hidden=true; $('stopId').hidden=true; $('identify').disabled=idState!=='ok'; $('idNote').textContent=idIdleNote();
 }
-(function(){
-  var cl=window.claude;
-  if(!cl||typeof cl.use!=='function'){ idState='none'; updateIdUI(); return; }
-  cl.use('sample').then(function(s){
-    if(!s){ idState='none'; updateIdUI(); return; }
-    sampleFn=s;
-    return s.limits().then(function(l){ idState=(l&&l.images)?'ok':'none'; },function(){ idState='none'; }).then(updateIdUI);
-  },function(){ idState='none'; updateIdUI(); });
-})();
+try{ var savedKey=localStorage.getItem('hg_apiKey'); if(savedKey) $('apiKey').value=savedKey; }catch(e){}
+$('apiKey').addEventListener('input',function(){ try{ localStorage.setItem('hg_apiKey',this.value); }catch(e){} updateIdUI(); });
+updateIdUI();
 function updateLinks(){
   var q=$('q').value.trim(), e=encodeURIComponent(q);
   $('lnkEbay').href='https://www.ebay.co.uk/sch/i.html?_nkw='+e+'&LH_Sold=1&LH_Complete=1';
@@ -1762,30 +1703,36 @@ function showCard(r){
   }
   $('idResult').hidden=false;
 }
-function idError(code){
-  var m={not_granted:'AI access was declined for this page. Allow it to read cards.',rate_limited:'Too many requests. Try again in a moment.',
-    sampling_disabled:'Card recognition is not available on this account.',capability_disabled:'Card recognition is not available on this account.',
-    not_declared:'Card recognition is not available on this account.',capability_removed:'Card recognition is not available in this viewer.',
-    images_unavailable:'Card recognition is not available in this viewer.',image_rejected:'The card image was rejected. Adjust the corners and try again.',
-    invalid_json:'The reply could not be read. Try again.',empty_completion:'Nothing came back. Try again.',
-    refused:'This image could not be read.',session_expired:'Your session expired. Sign in again and retry.'};
-  return m[code]||'Something went wrong. Try again.';
-}
 async function identify(){
-  if(!S.src||!sampleFn||idCtl) return;
+  if(!S.src||!hasApiKey()||idCtl) return;
   var scale=Math.max(1,Math.min(2,ppmOf(S.quad)/8)), W=Math.round(CW*scale), H=Math.round(CH*scale);
   var px=flattenTo(S.data,S.sw,S.sh,S.quad,W,H);
   if(!px){ $('idNote').textContent='Place the four corners on the card first.'; return; }
   var c=document.createElement('canvas'); c.width=W; c.height=H;
   c.getContext('2d').putImageData(new ImageData(px,W,H),0,0);
-  var blob=await new Promise(function(res){ c.toBlob(res,'image/jpeg',.92); });
-  if(!blob){ $('idNote').textContent='Could not prepare the image.'; return; }
+  var dataUrl=c.toDataURL('image/jpeg',0.92);
+  var b64=dataUrl.split(',')[1];
+  if(!b64){ $('idNote').textContent='Could not prepare the image.'; return; }
   var ctl=new AbortController(); idCtl=ctl;
   $('idResult').hidden=true; $('identify').disabled=true; $('stopId').hidden=false; $('idNote').textContent='Reading and inspecting the card...';
   S.aiTried=true; setStep('read','run','Reading the printed text'); $('skipAi').hidden=false;
   try{
-    var r=await sampleFn.json(ID_PROMPT,{images:[blob],modelTier:'default',signal:ctl.signal});
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':getApiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      signal:ctl.signal,
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1024,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:ID_PROMPT}]}]})
+    });
     if(idCtl!==ctl) return;
+    if(!resp.ok){
+      var err=await resp.json().catch(function(){return {};});
+      throw {code:resp.status===401?'bad_key':resp.status===429?'rate_limited':'api_error',message:(err.error&&err.error.message)||'API returned '+resp.status};
+    }
+    var data=await resp.json();
+    var text=(data.content&&data.content[0]&&data.content[0].text)||'';
+    var jsonMatch=text.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw {code:'invalid_json',message:'No JSON in the response.'};
+    var r=JSON.parse(jsonMatch[0]);
     idCtl=null; $('stopId').hidden=true; $('identify').disabled=false;
     $('idNote').textContent='Card image sent for AI reading.';
     showCard(r); applyInspection(r); render();
@@ -1797,14 +1744,14 @@ async function identify(){
   }catch(e){
     if(idCtl!==ctl) return;
     idCtl=null; $('stopId').hidden=true;
-    var code=e&&e.code;
+    var code=(e&&e.code)||'';
     $('skipAi').hidden=true;
-    setStep('read',code==='cancelled'?'skip':'fail',code==='cancelled'?'Skipped':idError(code));
+    var aborted=e&&e.name==='AbortError';
+    var msg=aborted?'Skipped':code==='bad_key'?'Invalid API key. Check the key on the start screen.':code==='rate_limited'?'Too many requests. Try again in a moment.':code==='invalid_json'?'The reply could not be read. Try again.':(e&&e.message)||'Something went wrong. Try again.';
+    setStep('read',aborted?'skip':'fail',msg);
     setTimeout(tryFinish,0);
-    var gone=['sampling_disabled','capability_disabled','not_declared','capability_removed','images_unavailable'].indexOf(code)>=0;
-    if(gone) idState='none';
     $('identify').disabled=idState!=='ok';
-    $('idNote').textContent=code==='cancelled'?idIdleNote():idError(code);
+    $('idNote').textContent=aborted?idIdleNote():msg;
   }
 }
 
@@ -1813,8 +1760,6 @@ $('showMarks').addEventListener('change',drawFlat);
 $('identify').addEventListener('click',identify);
 $('stopId').addEventListener('click',function(){ if(idCtl) idCtl.abort(); });
 $('q').addEventListener('input',updateLinks);
-['vRaw','v8','v9','v10','vFee'].forEach(function(id){ $(id).addEventListener('input',function(){ $('exChip').hidden=true; saveValues(); renderValue(); }); });
-loadValues();
 
 if(window.ResizeObserver){ var ro=new ResizeObserver(redrawAll); ro.observe(photo); ro.observe(flatC); }
 if(window.matchMedia){ var mq=window.matchMedia('(prefers-color-scheme: dark)'); if(mq.addEventListener) mq.addEventListener('change',redrawAll); }
@@ -1825,8 +1770,6 @@ $('tabFlat').addEventListener('click',function(){ setTab('flat'); });
 $('tabPhoto').addEventListener('click',function(){ setTab('photo'); });
 $('backStart').addEventListener('click',showStart);
 $('skipAi').addEventListener('click',function(){ if(idCtl) idCtl.abort(); });
-try{ if(localStorage.getItem('dc_useAi')==='0') $('useAi').checked=false; }catch(e){}
-$('useAi').addEventListener('change',function(){ try{ localStorage.setItem('dc_useAi',this.checked?'1':'0'); }catch(e){} });
 var dz=$('dropzone');
 ['dragenter','dragover'].forEach(function(ev){ dz.addEventListener(ev,function(e){ e.preventDefault(); dz.classList.add('over'); }); });
 ['dragleave','drop'].forEach(function(ev){ dz.addEventListener(ev,function(e){ e.preventDefault(); dz.classList.remove('over'); }); });

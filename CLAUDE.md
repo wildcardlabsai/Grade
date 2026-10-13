@@ -5,7 +5,7 @@ Single-file static web app (`index.html`: HTML, CSS and one IIFE script). No bui
 
 ## Layout of index.html
 - CSS tokens on `:root`, dark first, light under `prefers-color-scheme: light`. Style matches holograde.uk: near-black, teal eyebrows, blue-violet-pink gradient (`--holo`).
-- Start screen (`#start`): hero, dropzone, how-it-works, tips, AI opt-in checkbox (`#useAi`), sample buttons, info sections.
+- Start screen (`#start`): hero, dropzone, how-it-works, tips, Anthropic API key input (`#apiKey`), sample buttons, info sections.
 - Flow (`#flow`): six-step scan strip (`#steps`), scan log (`#scanLog`) shown while `S.scan` is true, tabbed viewer (flattened card / photo with draggable corners), results column.
 - Script: `/*PURE_START*/ … /*PURE_END*/` holds pure functions with no DOM: homography/flatten (504×704 px, 8 px/mm), `detectBorders`, `pair`, `tierFor`, `findCard`, `GRADERS` + `estimateGrader/estimateAll`, `analyseCondition`, `stepWidth`. Tests extract this block with `new Function`. Keep it DOM-free.
 - Below the pure block: state `S`, `makeSample`, `setSource/loadFile/autoCorners`, `render/renderGraders`, drag handlers, scan sequencing (`startScan/startReveal/finishScan`), identify/inspect (`identify`, `applyInspection`).
@@ -18,7 +18,7 @@ Single-file static web app (`index.html`: HTML, CSS and one IIFE script). No bui
 - Border detection assumes a standard bordered card.
 
 ## Known gaps / next work
-1. **AI step on a normal host.** `window.claude` is absent outside claude.ai, so `idState` becomes `none` and the step is skipped. To bring it back for everyone, replace `sampleFn.json(ID_PROMPT, {images:[blob], …})` in `identify()` with a `fetch('/api/inspect', …)` to a server endpoint that calls a vision model. Keep the API key server-side, add rate limiting and a daily cap, and fall back to measure-only when the cap is hit. `ID_PROMPT` and the JSON shape (`name`, `card_number`, `set_name`, … `condition.max_psa`, `defects[]`) are already defined.
+1. **Server-side API proxy.** The Anthropic API key is currently entered client-side and sent directly from the browser using `anthropic-dangerous-direct-browser-access`. For a production deployment, replace the direct `fetch` in `identify()` with a call to a server endpoint that holds the key, adds rate limiting and a daily cap, and falls back to measure-only when the cap is hit.
 2. **Free name lookup option.** In-browser OCR (Tesseract.js) on the name/number crop plus a free card database (e.g. TCGdex), with manual entry as a fallback.
 3. **On-device face check.** An early experiment (blotchiness and dark flecks in pale areas) gave numbers on one worn card but cannot be thresholded without clean real-card photos. Needs a small calibration set.
 4. **Calibrate** `TH` (corner/edge/surface thresholds) against cards with known grades.
@@ -26,4 +26,4 @@ Single-file static web app (`index.html`: HTML, CSS and one IIFE script). No bui
 
 ## Testing
 - `node tests/graders.js` for estimate logic and a syntax check.
-- For UI checks use Playwright against `index.html`. Stub the AI by defining `window.claude = {use: async n => n==='sample' ? {limits: async()=>({images:{}}), json: async()=>({…})} : null}` before load.
+- For UI checks use Playwright against `index.html`. Stub the AI by intercepting `fetch` calls to `api.anthropic.com` and returning a canned JSON response.
