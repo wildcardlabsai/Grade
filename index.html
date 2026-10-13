@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HoloGrade</title>
+<title>Holo Grade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -334,7 +334,7 @@ details[open]>summary{margin-bottom:10px}
   <header class="top">
     <div class="brand">
       <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4F8BFF"/><stop offset=".5" stop-color="#9B6BFF"/><stop offset="1" stop-color="#F27BC9"/></linearGradient></defs><circle cx="16" cy="16" r="13.5" fill="none" stroke="url(#hg)" stroke-width="2"/><path d="M11 9v14M21 9v14M11 16h10" fill="none" stroke="url(#hg)" stroke-width="2.4" stroke-linecap="square"/></svg>
-      <h1>HoloGrade</h1>
+      <h1>Holo Grade</h1>
     </div>
     <p class="tag"><i aria-hidden="true"></i>Runs in your browser · No account</p>
   </header>
@@ -350,7 +350,7 @@ details[open]>summary{margin-bottom:10px}
     <label id="dropzone" class="drop" for="file">
       <svg viewBox="0 0 32 32" width="44" height="44" aria-hidden="true"><rect x="8" y="3" width="16" height="26" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 12v9M11.5 16.5h9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
       <h2>Start a scan</h2>
-      <p>Drop an image here or tap to pick one. HoloGrade finds the card, reads its name, measures the centering, checks corners, edges and surfaces, then estimates grades at PSA, BGS, CGC, ACE and TAG.</p>
+      <p>Drop an image here or tap to pick one. Holo Grade finds the card, reads its name, measures the centering, checks corners, edges and surfaces, then estimates grades at PSA, BGS, CGC, ACE and TAG.</p>
       <span class="btn primary">Choose a photo</span>
     </label>
     <ol class="how" aria-label="How it works">
@@ -383,7 +383,7 @@ details[open]>summary{margin-bottom:10px}
       </section>
       <section aria-labelledby="ih2">
         <h3 id="ih2">Grader estimates</h3>
-        <p class="sub">Each company scores centering and condition differently. HoloGrade applies each one's published centering limits and shows where your card is likely to land.</p>
+        <p class="sub">Each company scores centering and condition differently. Holo Grade applies each one's published centering limits and shows where your card is likely to land.</p>
         <ul class="gl" aria-label="Graders compared"><li>PSA</li><li>BGS</li><li>CGC</li><li>ACE</li><li>TAG</li></ul>
       </section>
       <section aria-labelledby="ih3">
@@ -398,7 +398,7 @@ details[open]>summary{margin-bottom:10px}
       </section>
       <section class="faq" aria-labelledby="ih4">
         <h3 id="ih4">Questions</h3>
-        <details><summary>Do I need an account?</summary><p>No. There is no sign-up and HoloGrade stores nothing about you or your cards.</p></details>
+        <details><summary>Do I need an account?</summary><p>No. There is no sign-up and Holo Grade stores nothing about you or your cards.</p></details>
         <details><summary>Where does my photo go?</summary><p>Finding the card and measuring it happen in your browser. If the AI option is on, the straightened card image is sent to an AI model to read the name and check condition. Turn it off to measure only.</p></details>
         <details><summary>Is it free?</summary><p>Yes. Measuring happens in your browser and the AI card reading is free.</p></details>
         <details><summary>How accurate is it?</summary><p>Border measurements are good to roughly 2% on a sharp, square-on photo. Wear detection is newer, so treat it as a guide and compare it with the real card.</p></details>
@@ -593,7 +593,7 @@ details[open]>summary{margin-bottom:10px}
       </div>
     </div>
   </section>
-  <p class="foot">HoloGrade · Pre-grade estimate from a photo, not an official grade from any grading company. Nothing is stored and there is no account.</p>
+  <p class="foot">Holo Grade · Pre-grade estimate from a photo, not an official grade from any grading company. Nothing is stored and there is no account.</p>
 </div>
 
 <script>
@@ -1157,7 +1157,7 @@ function drawCardFace(worn){
   g.fillText('Edge Finder',x0+22,ay+ah+56); g.textAlign='right'; g.fillText('30',x1-22,ay+ah+56);
   g.textAlign='left'; g.fillText('Perfect Split',x0+22,ay+ah+112); g.textAlign='right'; g.fillText('90+',x1-22,ay+ah+112); g.textAlign='left';
   g.fillStyle='#6A7A82'; g.font='400 16px Arial,sans-serif';
-  g.fillText('Generated test card for HoloGrade.',x0+22,ay+ah+150);
+  g.fillText('Generated test card for Holo Grade.',x0+22,ay+ah+150);
   g.fillText('Border left 4.0 mm, right 3.0 mm.',x0+22,ay+ah+174);
   g.font='500 14px Arial,sans-serif'; g.fillText('001/100',x0+22,y1-16);
   if(worn){
@@ -1782,7 +1782,7 @@ function generateReport(){
   var cardW=200, cardH=Math.round(200*CH/CW);
   var needH=pad+28+8+cardH+20+30+20+20+20+120+pad;
   rc.height=Math.max(needH,500); g.fillStyle=bg; g.fillRect(0,0,rc.width,rc.height);
-  txt('HoloGrade Report',pad,y+20,'bold 20px "Space Grotesk",sans-serif',accent); y+=36;
+  txt('Holo Grade Report',pad,y+20,'bold 20px "Space Grotesk",sans-serif',accent); y+=36;
   txt(new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString(),pad,y+12,'12px "JetBrains Mono",monospace',muted); y+=24;
   if(S.flatData){
     var fc=document.createElement('canvas'); fc.width=CW; fc.height=CH;
