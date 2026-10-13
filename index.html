@@ -1,0 +1,1838 @@
+<title>HoloGrade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a lab console. Choose a card, a scan runs through six checks with a live log, then the results open.
+   Wide screens keep the card fixed on the left while the results scroll on the right. */
+:root{
+  --bg:#04050A;
+  --surface:#090B13;
+  --ink:#EDF0F7;
+  --muted:#8A90A6;
+  --line:#1B1F30;
+  --accent:#2FD3C6;
+  --accent-ink:#031A18;
+  --accent-soft:#0D2A2E;
+  --grid:rgba(130,150,255,.055);
+  --glow:radial-gradient(ellipse 55% 38% at 82% 0%,rgba(139,92,246,.20),transparent 70%),radial-gradient(ellipse 40% 30% at 12% 8%,rgba(47,211,198,.10),transparent 70%);
+  --holo:linear-gradient(100deg,#4F8BFF 0%,#9B6BFF 50%,#F27BC9 100%);
+  --z10:#3DD68C;
+  --z9:#94D24F;
+  --z8:#EDBE3F;
+  --z7:#F28B4A;
+  --z6:#F26A5C;
+  --font-display:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-body:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --grid:rgba(0,0,0,.04);
+    --glow:radial-gradient(ellipse 55% 38% at 82% 0%,rgba(139,92,246,.10),transparent 70%);
+    --accent:#007A73;
+    --bg:#EAF0F6;
+    --surface:#FFFFFF;
+    --ink:#0B1420;
+    --muted:#4F6176;
+    --line:#CBD6E2;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#D3EFEC;
+    --z10:#17874A;
+    --z9:#4F8F2A;
+    --z8:#A87400;
+    --z7:#C0561A;
+    --z6:#BE3A2E;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --grid:rgba(0,0,0,.04);
+  --glow:radial-gradient(ellipse 55% 38% at 82% 0%,rgba(139,92,246,.10),transparent 70%);
+  --bg:#EAF0F6;
+  --surface:#FFFFFF;
+  --ink:#0B1420;
+  --muted:#4F6176;
+  --line:#CBD6E2;
+  --accent:#007A73;
+  --accent-ink:#FFFFFF;
+  --accent-soft:#D3EFEC;
+  --z10:#17874A;
+  --z9:#4F8F2A;
+  --z8:#A87400;
+  --z7:#C0561A;
+  --z6:#BE3A2E;
+  color-scheme:light;
+}
+
+*{box-sizing:border-box}
+html{overflow-anchor:none}
+[hidden]{display:none!important}
+body{background-color:var(--bg);background-image:var(--glow),linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:100% 100%,48px 48px,48px 48px;color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+.app{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:grid;gap:16px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+.brand{display:flex;align-items:center;gap:10px}
+.top{padding-bottom:14px;margin-bottom:4px;border-bottom:1px solid var(--line);position:relative}
+.top::after{content:"";position:absolute;left:0;bottom:-1px;width:120px;height:2px;background:var(--holo)}
+.brand h1{margin:0;color:var(--ink);font-family:var(--font-display);font-weight:600;font-size:20px;letter-spacing:.01em;line-height:1}
+.tag{margin:0;display:flex;align-items:center;gap:8px;color:var(--muted);font:500 11px/1.3 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
+.tag i{width:7px;height:7px;border-radius:50%;background:var(--z10);flex:none}
+.foot{margin:8px 0 0;font:400 12px/1.5 var(--font-mono);color:var(--muted);max-width:90ch}
+
+.btn{font:500 12px/1 var(--font-mono);letter-spacing:.04em;min-height:40px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:3px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn:focus-visible,.sr:focus-visible + .drop,.tab:focus-visible,input[type=range]:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--holo);border-color:transparent;color:#fff;font:600 12px/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.btn.primary:hover{filter:brightness(1.1);border-color:transparent}
+.btn.primary:disabled{filter:grayscale(.6)}
+.btn.quiet{background:transparent}
+.btn:disabled{opacity:.55;cursor:default}
+.btn:disabled:hover{border-color:var(--line)}
+a.btn{text-decoration:none}
+.status{margin:0;min-height:1.5em;color:var(--muted);font-size:13px}
+.eyebrow{margin:0;font:500 10.5px/1.3 var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.chip{font:500 11px var(--font-mono);letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:3px;background:var(--accent-soft);color:var(--ink)}
+.eyebrow .chip{margin-left:8px;vertical-align:1px}
+
+/* hero */
+.hero{display:grid;gap:14px;width:100%;max-width:780px;margin:0 auto}
+.kick{margin:0;display:flex;align-items:center;gap:8px;font:500 10.5px/1.3 var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.kick i{width:6px;height:6px;background:var(--accent);flex:none}
+.hero h2{margin:0;font-family:var(--font-display);font-weight:500;font-size:clamp(40px,8.5vw,72px);line-height:1.02;letter-spacing:-.025em;text-wrap:balance}
+.hero h2 span{display:block;font-weight:600;background:var(--holo);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.hero>p{margin:0;max-width:56ch;color:var(--muted);font-size:16px}
+.how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));border:1px solid var(--line);background:var(--surface)}
+.how li{padding:14px;display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.how li+li{border-left:1px solid var(--line)}
+.how b{color:var(--ink);font-size:15px;font-weight:600}
+.how em{font:500 14px var(--font-mono);font-style:normal;color:#8B7BFF}
+@media (max-width:620px){.how li+li{border-left:0;border-top:1px solid var(--line)}}
+/* info */
+.info{display:grid;gap:36px;margin-top:8px;padding-top:36px;border-top:1px solid var(--line)}
+.info h3{margin:0 0 6px;font-family:var(--font-display);font-weight:600;font-size:clamp(22px,3.4vw,30px);letter-spacing:-.015em;line-height:1.15;text-wrap:balance}
+.info .sub{margin:0 0 14px;color:var(--muted);max-width:60ch}
+.chk{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+@media (max-width:520px){.chk{grid-template-columns:1fr}}
+.chk li{background:var(--surface);padding:14px;display:grid;gap:4px;align-content:start;font-size:13px;color:var(--muted)}
+.chk b{font-size:15px;font-weight:600;color:var(--ink)}
+.chk em{font:500 10.5px var(--font-mono);font-style:normal;letter-spacing:.14em;text-transform:uppercase;color:#8B7BFF}
+.gl{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px}
+.gl li{padding:8px 12px;border:1px solid var(--line);background:var(--surface);font:500 12px var(--font-mono);letter-spacing:.08em}
+.lim{margin:0;padding:0;list-style:none;display:grid;gap:10px;color:var(--muted);font-size:14px}
+.lim li{padding-left:16px;position:relative}
+.lim li::before{content:"";position:absolute;left:0;top:.65em;width:6px;height:6px;background:var(--z8)}
+.lim b{color:var(--ink);font-weight:600}
+.faq details{border-bottom:1px solid var(--line)}
+.faq details:first-of-type{border-top:1px solid var(--line)}
+.faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:16px;padding:14px 2px;font-weight:500;font-size:16px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font:400 18px var(--font-mono);color:var(--accent)}
+.faq details[open] summary::after{content:"\2013"}
+.faq details p{margin:0 0 14px;color:var(--muted);font-size:14px;max-width:62ch}
+/* start screen */
+.start{display:grid;gap:22px;width:100%;max-width:780px;margin:4vh auto 0}
+.drop{position:relative;display:grid;justify-items:center;gap:12px;text-align:center;padding:40px 20px;border:1px solid var(--line);border-radius:2px;background:var(--surface);cursor:pointer}
+.drop::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:2px;background:var(--holo)}
+.drop.over{background:var(--accent-soft)}
+.drop svg{color:var(--accent)}
+.drop h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:clamp(22px,4.6vw,30px);line-height:1.1;text-wrap:balance}
+.drop p{margin:0;color:var(--muted);max-width:50ch}
+.drop .btn{pointer-events:none}
+.tips{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.tips li{padding:12px 14px;border:1px solid var(--line);border-radius:2px;background:var(--surface);font-size:13px;color:var(--muted)}
+.tips b{display:block;margin-bottom:2px;color:var(--ink);font-size:14px}
+.try{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:14px;color:var(--muted)}
+.check{display:inline-flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--muted);cursor:pointer}
+.check input{margin-top:3px;accent-color:var(--accent)}
+
+/* flow */
+#flow{display:grid;gap:14px}
+.flowbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.flowbar .grow{flex:1 1 200px;min-width:0}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.steps li{transition:border-color .2s;display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:0;font-size:13px;font-weight:600}
+.steps .dot{flex:none;width:20px;height:20px;margin-top:1px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font:700 11px/1 var(--font-mono);color:var(--muted)}
+.steps .lbl{min-width:0}
+.steps .sub{display:block;font-weight:400;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.steps li[data-state="run"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.steps li[data-state="run"] .dot{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+.steps li[data-state="ok"] .dot{background:var(--z10);border-color:var(--z10);color:#fff}
+.steps li[data-state="fail"] .dot{background:var(--z6);border-color:var(--z6);color:#fff}
+.steps li[data-state="skip"] .dot{border-style:dashed}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.mini{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 18px;padding:8px 14px;background:var(--surface);border:1px solid var(--line);border-radius:6px;font:500 13px var(--font-mono);font-variant-numeric:tabular-nums}
+.mini b{font-family:var(--font-display);font-weight:700;font-size:24px;line-height:1.1;white-space:nowrap}
+.mini span{color:var(--muted)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.results{display:grid;gap:16px;min-width:0}
+@media (min-width:980px){
+  .layout{grid-template-columns:minmax(0,5fr) minmax(0,6fr);align-items:start}
+  .viewer{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px)}
+}
+
+.panel{position:relative;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:2px;padding:16px;display:grid;gap:12px}
+.panel-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px}
+.panel-head h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:22px;letter-spacing:-.01em}
+.panel-head p{margin:0;flex:1 1 220px;font-size:13px;color:var(--muted)}
+
+.tabbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;border-bottom:1px solid var(--line);margin:-4px -4px 0;padding-inline:4px}
+.tabs{display:flex;gap:2px}
+.tab{font:600 13px var(--font-body);min-height:42px;padding:0 14px;border:0;border-bottom:2px solid transparent;background:none;color:var(--muted);cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tools{display:flex;flex-wrap:wrap;gap:6px}
+.tools .btn{min-height:34px;padding:0 10px;font-size:12px}
+.stage{position:relative;display:grid;justify-items:center}
+.stage canvas{display:block;max-width:100%;height:auto;border-radius:3px;box-shadow:0 0 0 1px var(--line);touch-action:none}
+.cwrap{position:relative;width:min(100%,520px,max(300px,calc((100vh - 250px)*.716)))}
+#flat{width:100%;aspect-ratio:504/704}
+.panel::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:1px;background:var(--holo);opacity:.55}
+#gradeSec::before{height:2px;opacity:1}
+/* scan */
+.scanfx{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:3px}
+.scanfx .beam{position:absolute;left:0;right:0;top:0;height:3px;background:var(--holo);box-shadow:0 0 18px 4px rgba(77,212,232,.55);animation:sweep 2.2s ease-in-out infinite alternate}
+.scanfx .br{position:absolute;width:26px;height:26px;border:2px solid var(--accent)}
+.scanfx .br.a{left:6px;top:6px;border-right:0;border-bottom:0}.scanfx .br.b{right:6px;top:6px;border-left:0;border-bottom:0}
+.scanfx .br.c{left:6px;bottom:6px;border-right:0;border-top:0}.scanfx .br.d{right:6px;bottom:6px;border-left:0;border-top:0}
+.scanfx .lab{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);padding:4px 10px;border-radius:3px;background:rgba(3,24,32,.82);color:#4DD4E8;font:600 11px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+@keyframes sweep{from{top:0}to{top:calc(100% - 3px)}}
+.scanlog{margin:0;padding:0;list-style:none;display:grid;gap:6px;font:400 13px/1.45 var(--font-mono);min-height:12em;align-content:start}
+.scanlog li{display:grid;grid-template-columns:4.5em minmax(0,1fr);gap:8px;color:var(--muted);overflow-wrap:anywhere}
+.scanlog li time{font-variant-numeric:tabular-nums;color:var(--muted)}
+.scanlog li.ok span{color:var(--ink)}
+.scanlog li.run span::after{content:"";display:inline-block;width:.6em;height:1em;margin-left:4px;vertical-align:-2px;background:var(--accent);animation:blink 1s steps(2) infinite}
+.scanlog li.fail span{color:var(--z8)}
+@keyframes blink{50%{opacity:0}}
+#flow.scanning .mini,#flow.scanning .tools{display:none}
+.results.scanning>section:not(#scanSec),.results.scanning>details{display:none}
+.loupe{position:absolute;top:10px;width:128px;height:128px;border-radius:50%;border:2px solid var(--accent);background:#000;box-shadow:0 2px 14px rgba(0,0,0,.45);pointer-events:none}
+.loupe.left{left:10px}.loupe.right{right:10px}
+.hint{margin:0;font-size:13px;color:var(--muted)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.controls label{font:500 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.controls input[type=range]{flex:1 1 140px;min-width:0;accent-color:var(--accent)}
+.controls .check{font:400 13px var(--font-body);letter-spacing:0;text-transform:none;align-items:center}
+
+/* card identity */
+.idrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.idnote{flex:1 1 200px;font-size:13px;color:var(--muted)}
+.cardname{margin:0;font-family:var(--font-display);font-weight:700;font-size:34px;line-height:1.05;overflow-wrap:anywhere}
+#idResult{display:grid;gap:12px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.idnotes{margin:0;font-size:13px;color:var(--muted)}
+.search{display:grid;gap:10px}
+.field{display:grid;gap:4px;min-width:0}
+.field input{width:100%;min-width:0;font:500 14px var(--font-mono);padding:9px 10px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink)}
+.field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.links{margin:0;display:flex;flex-wrap:wrap;gap:8px}
+
+/* grades */
+.grade{margin:4px 0 6px;white-space:nowrap;font-family:var(--font-display);font-weight:700;font-size:clamp(44px,9vw,68px);line-height:.95;color:var(--ink)}
+.grade.g10{color:var(--z10)}.grade.g9{color:var(--z9)}.grade.g8{color:var(--z8)}.grade.g7{color:var(--z7)}.grade.g6,.grade.g5,.grade.g4,.grade.g3,.grade.g2,.grade.g1{color:var(--z6)}
+.why{margin:0;min-height:7em;font-size:14px;color:var(--muted);max-width:56ch}
+.tablewrap{overflow-x:auto}
+.gt{width:100%;border-collapse:collapse;font-size:14px}
+.gt th{font:500 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;white-space:nowrap}
+.gt td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
+.gt .nm{font-weight:700}
+.gt .nm small{display:block;font:400 11px var(--font-mono);color:var(--muted);letter-spacing:.03em}
+.gt .cg,.gt .ov{font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1.1;white-space:nowrap;font-variant-numeric:tabular-nums}
+.gt .ov small{font:400 11px var(--font-mono);color:var(--muted);letter-spacing:.03em;margin-right:4px}
+.gt .cg{color:var(--muted)}
+.gt .hb{display:none;font:400 12px/1.3 var(--font-body,inherit);color:var(--muted);white-space:normal;margin-top:2px}
+.gt .held{font-size:13px;color:var(--muted)}
+.gt .g10{color:var(--z10)}.gt .g9{color:var(--z9)}.gt .g8{color:var(--z8)}.gt .g7{color:var(--z7)}.gt .g6{color:var(--z6)}
+.gnote{margin:0;font-size:12px;color:var(--muted)}
+details>summary{cursor:pointer;font-weight:600;font-size:14px}
+details[open]>summary{margin-bottom:10px}
+.srcs{margin:0;padding:0;list-style:none;display:grid;gap:8px;font-size:13px;color:var(--muted)}
+.srcs b{color:var(--ink)}
+
+/* measurements */
+.axes{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:6px}
+.axis{padding:14px 16px;min-width:0}
+.axis+.axis{border-left:1px solid var(--line)}
+.ratio{margin:4px 0 10px;display:flex;align-items:baseline;gap:4px;font-family:var(--font-display);font-weight:700;font-size:clamp(38px,7vw,52px);line-height:1;font-variant-numeric:tabular-nums}
+.ratio .slash{background:var(--holo);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:400}
+.ratio .lo{color:var(--muted);font-weight:600}
+.split{position:relative;display:flex;height:8px;border-radius:2px;overflow:hidden;background:var(--accent-soft)}
+.split i{display:block;height:100%}
+.split i:first-child{background:var(--holo)}
+.split::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--surface)}
+.gaps{margin:10px 0 0;display:flex;flex-wrap:wrap;align-content:flex-start;min-height:2.8em;gap:2px 14px;font:400 12px/1.4 var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.gaps .strong{color:var(--ink);font-weight:600}
+.ladder{margin:4px 14px 0}
+.pins{position:relative;height:32px}
+.pin{position:absolute;transform:translateX(-50%);padding:4px 8px;border-radius:4px;font:600 12px/1.2 var(--font-mono);white-space:nowrap;font-variant-numeric:tabular-nums;transition:left .25s ease}
+.pin::after{content:"";position:absolute;left:50%;margin-left:-5px;border:5px solid transparent}
+.pins-top .pin{top:0}
+.pins-top .pin::after{top:100%;border-top-color:currentColor}
+.pins-bot .pin{bottom:0}
+.pins-bot .pin::after{bottom:100%;border-bottom-color:currentColor}
+.pin.lr{background:var(--accent);color:var(--accent-ink)}
+.pin.tb{background:var(--ink);color:var(--surface)}
+.track{position:relative;height:40px;border-radius:4px;overflow:hidden;background:var(--line)}
+.zone{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font:500 15px var(--font-mono);color:var(--muted);background:var(--line);background:color-mix(in srgb,var(--zc) 22%,var(--surface))}
+.zone+.zone{border-left:1px solid var(--surface)}
+.zone.on{color:var(--ink);font-weight:600;background:color-mix(in srgb,var(--zc) 52%,var(--surface));box-shadow:inset 0 0 0 2px var(--zc)}
+.z10{--zc:var(--z10)}.z9{--zc:var(--z9)}.z8{--zc:var(--z8)}.z7{--zc:var(--z7)}.z6{--zc:var(--z6)}
+.ticks{position:relative;height:20px;margin-top:6px;font:400 11px var(--font-mono);color:var(--muted)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.ticks span:first-child{transform:none}
+.ticks span:last-child{transform:translateX(-100%)}
+.cond{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:6px}
+.cell{padding:12px 14px;min-width:0}
+.cell+.cell{border-left:1px solid var(--line)}
+.lvl{margin:4px 0 2px;font-family:var(--font-display);font-weight:700;font-size:24px;line-height:1.1;white-space:nowrap}
+.lvl.l0{color:var(--z10)}.lvl.l1{color:var(--z8)}.lvl.l2{color:var(--z7)}.lvl.l3{color:var(--z6)}
+.cap{margin:0;min-height:1.5em;font-size:13px;color:var(--muted)}
+.det{margin:6px 0 0;min-height:2.8em;font:400 12px/1.4 var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+#aiBox{display:grid;gap:8px}
+.aicap{margin:0;font-weight:600;font-size:15px}
+.defects{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:13px}
+.defects li{display:flex;gap:8px;align-items:baseline;min-width:0}
+.defects .txt{min-width:0;overflow-wrap:anywhere}
+.chip.sev-minor{background:color-mix(in srgb,var(--z8) 24%,var(--surface))}
+.chip.sev-moderate{background:color-mix(in srgb,var(--z7) 30%,var(--surface))}
+.chip.sev-major{background:color-mix(in srgb,var(--z6) 34%,var(--surface))}
+
+/* worth grading */
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px}
+.net{width:100%;border-collapse:collapse;font-size:13px}
+.net th{font:500 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left}
+.net th,.net td{padding:8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+.net tr.on td{background:var(--accent-soft)}
+.net .pos{color:var(--z10);font-weight:600}.net .neg{color:var(--z6);font-weight:600}
+.netsum{margin:0;min-height:3em;font-size:14px}
+.notes{margin:0;padding:0;list-style:none;display:grid;gap:8px;max-width:80ch;font-size:13px;color:var(--muted)}
+
+@media (max-width:820px){
+  .gt th:nth-child(4),.gt td.held{display:none}
+  .gt .hb{display:block}
+  .gt td.ov{white-space:normal}
+  .status{min-height:3em}
+  .cond{grid-template-columns:1fr 1fr}
+  .cell+.cell{border-left:0}
+  .cell:nth-child(even){border-left:1px solid var(--line)}
+  .cell:nth-child(n+3){border-top:1px solid var(--line)}
+  .lvl{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){.scanfx .beam{animation:none;top:50%}.scanlog li.run span::after{animation:none}.pin{transition:none}.steps li[data-state="run"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.steps li[data-state="run"] .dot{animation:none}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4F8BFF"/><stop offset=".5" stop-color="#9B6BFF"/><stop offset="1" stop-color="#F27BC9"/></linearGradient></defs><circle cx="16" cy="16" r="13.5" fill="none" stroke="url(#hg)" stroke-width="2"/><path d="M11 9v14M21 9v14M11 16h10" fill="none" stroke="url(#hg)" stroke-width="2.4" stroke-linecap="square"/></svg>
+      <h1>HoloGrade</h1>
+    </div>
+    <p class="tag"><i aria-hidden="true"></i>Runs in your browser · No account</p>
+  </header>
+
+  <input id="file" class="sr" type="file" accept="image/*">
+
+  <section id="start" class="start" aria-label="Choose a card">
+    <div class="hero">
+      <p class="kick"><i aria-hidden="true"></i>Pokémon pre-grade estimator</p>
+      <h2>Know the card.<span>Know the evidence.</span></h2>
+      <p>Check centering, corners, edges and surface from a single photo, and see where each grading company is likely to land. It runs in your browser, with no account and nothing stored.</p>
+    </div>
+    <label id="dropzone" class="drop" for="file">
+      <svg viewBox="0 0 32 32" width="44" height="44" aria-hidden="true"><rect x="8" y="3" width="16" height="26" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 12v9M11.5 16.5h9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      <h2>Start a scan</h2>
+      <p>Drop an image here or tap to pick one. HoloGrade finds the card, reads its name, measures the centering, checks corners, edges and surfaces, then estimates grades at PSA, BGS, CGC, ACE and TAG.</p>
+      <span class="btn primary">Choose a photo</span>
+    </label>
+    <ol class="how" aria-label="How it works">
+      <li><em>01</em><b>Choose a photo</b>Front of the card, on a plain dark surface.</li>
+      <li><em>02</em><b>Read the card</b>Name, set and number from the printed text.</li>
+      <li><em>03</em><b>Inspect condition</b>Borders, corners, edges and surface are measured.</li>
+      <li><em>04</em><b>Compare graders</b>Estimates for PSA, BGS, CGC, ACE and TAG.</li>
+    </ol>
+    <ul class="tips">
+      <li><b>Dark, plain mat</b>The card edge is found against a contrasting surface.</li>
+      <li><b>Soft, even light</b>No flash. Glare and shadows read as wear.</li>
+      <li><b>Square on, card fills the frame</b>Hold the phone above the card, level with it.</li>
+    </ul>
+    <label class="check" for="useAi"><input id="useAi" type="checkbox" checked><span>Use AI to read the card and check its condition after I choose a photo. The straightened card image is sent to an AI model for this and counts toward your usage. Turn it off to measure only.</span></label>
+    <p class="try">No card to hand? <button class="btn" id="sample" type="button">Try a sample card</button> <button class="btn" id="worn" type="button">Try a worn sample</button></p>
+    <div class="info">
+      <section aria-labelledby="ih1">
+        <h3 id="ih1">What it checks</h3>
+        <p class="sub">Four checks on the front of the card. Each is scored on its own, and the results show which one is holding the grade back.</p>
+        <ul class="chk">
+          <li><em>Centering</em><b>Border ratios</b>Left/right and top/bottom, measured on a flat 63 × 88 mm card.</li>
+          <li><em>Corners</em><b>Whitening and rounding</b>Compared with the border colour beside each corner, so uneven light is not read as wear.</li>
+          <li><em>Edges</em><b>Chipping</b>Each edge is scanned for light flecks and the marks are drawn on the card.</li>
+          <li><em>Surface</em><b>Specks and grime</b>The border is checked for specks. The optional AI check looks at the whole face.</li>
+        </ul>
+      </section>
+      <section aria-labelledby="ih2">
+        <h3 id="ih2">Grader estimates</h3>
+        <p class="sub">Each company scores centering and condition differently. HoloGrade applies each one's published centering limits and shows where your card is likely to land.</p>
+        <ul class="gl" aria-label="Graders compared"><li>PSA</li><li>BGS</li><li>CGC</li><li>ACE</li><li>TAG</li></ul>
+      </section>
+      <section aria-labelledby="ih3">
+        <h3 id="ih3">Know the limits</h3>
+        <ul class="lim">
+          <li><b>Not an official grade.</b> No grading company has reviewed these numbers.</li>
+          <li><b>Front of the card only.</b> Back centering is not measured yet.</li>
+          <li><b>Photos can mislead.</b> Glare, flash and soft focus read as wear, and some flaws do not show in a photo.</li>
+          <li><b>Wear thresholds are early.</b> They still need checking against cards with known grades.</li>
+          <li><b>Standard bordered cards work best.</b> For full-art cards, place the border lines by hand.</li>
+        </ul>
+      </section>
+      <section class="faq" aria-labelledby="ih4">
+        <h3 id="ih4">Questions</h3>
+        <details><summary>Do I need an account?</summary><p>No. There is no sign-up and HoloGrade stores nothing about you or your cards.</p></details>
+        <details><summary>Where does my photo go?</summary><p>Finding the card and measuring it happen in your browser. If the AI option is on, the straightened card image is sent to an AI model to read the name and check condition. Turn it off to measure only.</p></details>
+        <details><summary>Is it free?</summary><p>Measuring is free. The optional AI reading counts toward your own usage allowance.</p></details>
+        <details><summary>How accurate is it?</summary><p>Border measurements are good to roughly 2% on a sharp, square-on photo. Wear detection is newer, so treat it as a guide and compare it with the real card.</p></details>
+      </section>
+    </div>
+  </section>
+
+  <section id="flow" hidden>
+    <div class="flowbar">
+      <label class="btn" for="file" id="newCard">Choose another photo</label>
+      <button class="btn quiet" id="backStart" type="button">Start over</button>
+      <span class="chip" id="srcTag">Your photo</span>
+      <p class="status grow" id="status" role="status"></p>
+    </div>
+
+    <ol class="steps" id="steps" aria-label="Scan progress">
+      <li id="st-find" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Locate card<span class="sub"></span></span></li>
+      <li id="st-read" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Read card<span class="sub"></span></span></li>
+      <li id="st-borders" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Check borders<span class="sub"></span></span></li>
+      <li id="st-corners" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Check corners<span class="sub"></span></span></li>
+      <li id="st-edges" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Check edges<span class="sub"></span></span></li>
+      <li id="st-surface" data-state="wait"><span class="dot" aria-hidden="true"></span><span class="lbl">Check surfaces<span class="sub"></span></span></li>
+    </ol>
+
+    <div class="mini" id="mini" aria-label="Live result"><b id="miniGrade">-</b><span id="miniLR">L/R -</span><span id="miniTB">T/B -</span></div>
+
+    <div class="layout">
+      <div class="viewer">
+        <div class="panel">
+          <div class="tabbar">
+            <div class="tabs" role="tablist" aria-label="Card view">
+              <button class="tab" id="tabFlat" type="button" role="tab" aria-selected="true" aria-controls="panelFlat">Card</button>
+              <button class="tab" id="tabPhoto" type="button" role="tab" aria-selected="false" aria-controls="panelPhoto">Photo</button>
+            </div>
+            <div class="tools">
+              <button class="btn" id="findCorners" type="button">Find corners</button>
+              <button class="btn" id="resetCorners" type="button">Reset corners</button>
+              <button class="btn" id="rotate" type="button">Rotate 90°</button>
+            </div>
+          </div>
+          <div id="panelFlat" role="tabpanel" aria-labelledby="tabFlat" class="panel-body" style="display:grid;gap:12px">
+            <p class="hint">Drag each line to where the border ends. Scale is 8 px per mm on a 63 × 88 mm card.</p>
+            <div class="stage"><div class="cwrap"><canvas id="flat" width="504" height="704" aria-label="Flattened card with draggable border lines"></canvas><div class="scanfx" id="scanfx" hidden aria-hidden="true"><div class="beam"></div><i class="br a"></i><i class="br b"></i><i class="br c"></i><i class="br d"></i><span class="lab" id="scanLab">Scanning</span></div></div></div>
+            <div class="controls">
+              <label for="sens">Detection sensitivity</label>
+              <input id="sens" type="range" min="1" max="100" value="50">
+              <button class="btn" id="redetect" type="button">Detect borders</button>
+              <label class="check" for="showMarks"><input id="showMarks" type="checkbox" checked><span>Show wear marks</span></label>
+            </div>
+          </div>
+          <div id="panelPhoto" role="tabpanel" aria-labelledby="tabPhoto" class="panel-body" style="display:none;gap:12px" hidden>
+            <p class="hint">Corners are found automatically. Drag any ring that is off the card's corner.</p>
+            <div class="stage">
+              <canvas id="photo" aria-label="Card photo with draggable corner handles"></canvas>
+              <canvas id="loupe" class="loupe right" width="176" height="176" hidden></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="results" id="results">
+        <section class="panel" id="scanSec" aria-label="Scan log" hidden>
+          <div class="panel-head"><h2>Scan log</h2><p>Each check runs on your photo and reports here.</p></div>
+          <ol class="scanlog" id="scanLog" aria-live="polite"></ol>
+          <div><button class="btn quiet" id="skipAi" type="button" hidden>Skip card reading</button></div>
+        </section>
+        <section class="panel" id="cardSec" aria-label="Card">
+          <div class="panel-head">
+            <h2>Card</h2>
+            <p>Reads the printed name and number, then inspects the card for dirt, creases and wear that measuring alone cannot see.</p>
+          </div>
+          <div class="idrow">
+            <button class="btn primary" id="identify" type="button" disabled>Read &amp; inspect</button>
+            <button class="btn" id="stopId" type="button" hidden>Stop</button>
+            <span class="idnote" id="idNote">Checking AI access...</span>
+          </div>
+          <div id="idResult" hidden>
+            <p class="cardname" id="idName"></p>
+            <div class="tags" id="idMeta"></div>
+            <p class="idnotes" id="idNotes"></p>
+            <div id="idSearch" class="search">
+              <label class="field" for="q"><span class="eyebrow">Search for</span><input id="q" type="text" spellcheck="false" autocomplete="off"></label>
+              <p class="links">
+                <a class="btn" id="lnkEbay" target="_blank" rel="noopener noreferrer">eBay sold</a>
+                <a class="btn" id="lnkTcg" target="_blank" rel="noopener noreferrer">TCGplayer</a>
+                <a class="btn" id="lnkCm" target="_blank" rel="noopener noreferrer">Cardmarket</a>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="gradeSec" aria-label="Potential grades">
+          <div class="verdict">
+            <p class="eyebrow">Grade ceiling <span class="chip" id="basis">Measured only</span></p>
+            <p class="grade" id="grade">-</p>
+            <p class="why" id="why"></p>
+          </div>
+          <div class="tablewrap">
+            <table class="gt">
+              <thead><tr><th>Grader</th><th>Centering</th><th>Overall</th><th>Held back by</th></tr></thead>
+              <tbody id="gRows"></tbody>
+            </table>
+          </div>
+          <p class="gnote">Front of the card only. A Pristine or 10 also needs flawless corners, edges and surface, which a photo cannot confirm. BGS and ACE show a range because neither publishes how its sub-grades combine.</p>
+          <details>
+            <summary>Where these numbers come from</summary>
+            <ul class="srcs" id="gSrc"></ul>
+          </details>
+        </section>
+
+        <section class="panel" id="measureSec" aria-label="Measurements">
+          <div class="panel-head"><h2>Measurements</h2><p>From the flattened photo. Ratios list the larger border first.</p></div>
+          <div class="axes">
+            <div class="axis" id="lr">
+              <p class="eyebrow">Left / Right</p>
+              <p class="ratio"><span id="lrBig">-</span><span class="slash">/</span><span class="lo" id="lrSmall">-</span></p>
+              <div class="split"><i id="lrA"></i><i id="lrB"></i></div>
+              <p class="gaps"><span id="lrGapA"></span><span id="lrGapB"></span></p>
+            </div>
+            <div class="axis" id="tb">
+              <p class="eyebrow">Top / Bottom</p>
+              <p class="ratio"><span id="tbBig">-</span><span class="slash">/</span><span class="lo" id="tbSmall">-</span></p>
+              <div class="split"><i id="tbA"></i><i id="tbB"></i></div>
+              <p class="gaps"><span id="tbGapA"></span><span id="tbGapB"></span></p>
+            </div>
+          </div>
+          <div>
+            <p class="eyebrow">PSA front centering limits, larger border share</p>
+            <div class="ladder">
+              <div class="pins pins-top"><span class="pin lr" id="pinLR">L/R</span></div>
+              <div class="track">
+                <div class="zone z10" data-g="10" style="left:0;width:16.667%">10</div>
+                <div class="zone z9" data-g="9" style="left:16.667%;width:16.667%">9</div>
+                <div class="zone z8" data-g="8" style="left:33.333%;width:16.667%">8</div>
+                <div class="zone z7" data-g="7" style="left:50%;width:16.667%">7</div>
+                <div class="zone z6" data-g="6" style="left:66.667%;width:33.333%">6</div>
+              </div>
+              <div class="pins pins-bot"><span class="pin tb" id="pinTB">T/B</span></div>
+              <div class="ticks" aria-hidden="true">
+                <span style="left:0">50</span><span style="left:16.667%">55</span><span style="left:33.333%">60</span><span style="left:50%">65</span><span style="left:66.667%">70</span><span style="left:100%">80</span>
+              </div>
+            </div>
+          </div>
+          <div class="cond" aria-label="Condition">
+            <div class="cell">
+              <p class="eyebrow">Corners</p>
+              <p class="lvl l1" id="cCornersLvl">Analysing</p>
+              <p class="cap" id="cCornersCap"></p>
+              <p class="det" id="cCornersDet"></p>
+            </div>
+            <div class="cell">
+              <p class="eyebrow">Edges</p>
+              <p class="lvl l1" id="cEdgesLvl">Analysing</p>
+              <p class="cap" id="cEdgesCap"></p>
+              <p class="det" id="cEdgesDet"></p>
+            </div>
+            <div class="cell">
+              <p class="eyebrow">Surface</p>
+              <p class="lvl l1" id="cSurfaceLvl">Analysing</p>
+              <p class="cap" id="cSurfaceCap"></p>
+              <p class="det" id="cSurfaceDet"></p>
+            </div>
+            <div class="cell">
+              <p class="eyebrow">Photo quality</p>
+              <p class="lvl l1" id="cPhotoLvl">Analysing</p>
+              <p class="cap" id="cPhotoCap"></p>
+              <p class="det" id="cPhotoDet"></p>
+            </div>
+          </div>
+          <div id="aiBox" hidden>
+            <p class="eyebrow">AI inspection</p>
+            <p class="aicap" id="aiCap"></p>
+            <ul class="defects" id="aiList"></ul>
+            <p class="idnotes" id="aiLimits"></p>
+          </div>
+        </section>
+
+        <section class="panel" id="worthSec" aria-label="Worth grading">
+          <div class="panel-head">
+            <h2>Worth grading?</h2>
+            <span class="chip" id="exChip">Example values</span>
+            <p>Enter sold prices from the links above and your grading fee. PSA grades shown.</p>
+          </div>
+          <div class="fields">
+            <label class="field" for="vRaw"><span class="eyebrow">Raw (£)</span><input id="vRaw" type="text" inputmode="decimal" value="12"></label>
+            <label class="field" for="v8"><span class="eyebrow">PSA 8 (£)</span><input id="v8" type="text" inputmode="decimal" value="18"></label>
+            <label class="field" for="v9"><span class="eyebrow">PSA 9 (£)</span><input id="v9" type="text" inputmode="decimal" value="35"></label>
+            <label class="field" for="v10"><span class="eyebrow">PSA 10 (£)</span><input id="v10" type="text" inputmode="decimal" value="120"></label>
+            <label class="field" for="vFee"><span class="eyebrow">Grading fee (£)</span><input id="vFee" type="text" inputmode="decimal" value="20"></label>
+          </div>
+          <div class="tablewrap">
+            <table class="net">
+              <thead><tr><th>If it grades</th><th>Sells for</th><th>Net vs raw</th></tr></thead>
+              <tbody id="netRows"></tbody>
+            </table>
+          </div>
+          <p class="netsum" id="netSum"></p>
+        </section>
+
+        <details class="panel">
+          <summary>How this works and where it falls short</summary>
+          <ul class="notes">
+            <li>Finding the card, measuring borders and checking wear all happen on your device. Reading the card and the AI condition check send the straightened card image to an AI model and nothing else.</li>
+            <li>Measured wear covers whitening on corners and edges and specks on the border. It does not see grime, creases or scratches on the card face. The AI condition check looks for those and can only lower the ceiling.</li>
+            <li>Every number is an estimate from a photo, not a grade. Glare, flash and soft focus can fool it. Compare against the real card.</li>
+            <li>Corner detection works best on a plain, dark surface with nothing overlapping the edges. Expect a few pixels of error, so zoom in with the rings and fine-tune.</li>
+            <li>Border detection expects a standard bordered card. For full-art cards, place the lines by hand.</li>
+            <li>The corner, edge and surface thresholds are the page's own starting guesses and have not been checked against cards with known grades.</li>
+          </ul>
+        </details>
+      </div>
+    </div>
+  </section>
+  <p class="foot">HoloGrade · Pre-grade estimate from a photo, not an official grade from any grading company. Nothing is stored and there is no account.</p>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/*PURE_START*/
+var CW=504, CH=704;          // flattened card, 8 px per mm (63 x 88 mm)
+var MM=63/504;               // mm per flattened px
+var TIERS=[{g:10,max:55},{g:9,max:60},{g:8,max:65},{g:7,max:70},{g:6,max:80},{g:5,max:85},{g:3,max:90},{g:1,max:100}];
+
+function solve(A,b){
+  var n=b.length, M=A.map(function(r,i){return r.concat([b[i]]);}), r, c, k, p, f;
+  for(c=0;c<n;c++){
+    p=c;
+    for(r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[p][c])) p=r;
+    if(Math.abs(M[p][c])<1e-12) return null;
+    var t=M[c]; M[c]=M[p]; M[p]=t;
+    for(r=c+1;r<n;r++){ f=M[r][c]/M[c][c]; for(k=c;k<=n;k++) M[r][k]-=f*M[c][k]; }
+  }
+  var x=new Array(n), s;
+  for(r=n-1;r>=0;r--){ s=M[r][n]; for(k=r+1;k<n;k++) s-=M[r][k]*x[k]; x[r]=s/M[r][r]; }
+  return x;
+}
+function homography(src,dst){
+  var A=[],b=[],i;
+  for(i=0;i<4;i++){
+    var x=src[i][0],y=src[i][1],u=dst[i][0],v=dst[i][1];
+    A.push([x,y,1,0,0,0,-u*x,-u*y]); b.push(u);
+    A.push([0,0,0,x,y,1,-v*x,-v*y]); b.push(v);
+  }
+  return solve(A,b);
+}
+function applyH(h,x,y){ var w=h[6]*x+h[7]*y+1; return [(h[0]*x+h[1]*y+h[2])/w,(h[3]*x+h[4]*y+h[5])/w]; }
+
+// Warp the quad (TL,TR,BR,BL in source px) into a CW x CH rectangle.
+function flatten(src,sw,sh,quad){ return flattenTo(src,sw,sh,quad,CW,CH); }
+function flattenTo(src,sw,sh,quad,W,H){
+  var h=homography([[0,0],[W,0],[W,H],[0,H]],quad);
+  if(!h) return null;
+  var out=new Uint8ClampedArray(W*H*4), o=0, x, y, c;
+  for(y=0;y<H;y++){
+    for(x=0;x<W;x++,o+=4){
+      var px=x+.5, py=y+.5, w=h[6]*px+h[7]*py+1;
+      var sx=(h[0]*px+h[1]*py+h[2])/w-.5, sy=(h[3]*px+h[4]*py+h[5])/w-.5;
+      if(!(sx>0)) sx=0; else if(sx>sw-1.001) sx=sw-1.001;
+      if(!(sy>0)) sy=0; else if(sy>sh-1.001) sy=sh-1.001;
+      var x0=sx|0, y0=sy|0, fx=sx-x0, fy=sy-y0;
+      var i00=(y0*sw+x0)*4, i10=i00+4, i01=i00+sw*4, i11=i01+4;
+      for(c=0;c<3;c++){
+        var tp=src[i00+c]*(1-fx)+src[i10+c]*fx;
+        var bt=src[i01+c]*(1-fx)+src[i11+c]*fx;
+        out[o+c]=tp*(1-fy)+bt*fy;
+      }
+      out[o+3]=255;
+    }
+  }
+  return out;
+}
+
+// Finds the border width on each side, in flattened px. null means not found.
+function detectBorders(d,sens){
+  var thr=80-sens*0.7;
+  var colM=new Float32Array(CW*3), rowM=new Float32Array(CH*3);
+  var r0=(CH*.35)|0, r1=(CH*.65)|0, c0=(CW*.35)|0, c1=(CW*.65)|0, x, y, i, n;
+  for(x=0;x<CW;x++){
+    var r=0,g=0,b=0; n=r1-r0;
+    for(y=r0;y<r1;y++){ i=(y*CW+x)*4; r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
+    colM[x*3]=r/n; colM[x*3+1]=g/n; colM[x*3+2]=b/n;
+  }
+  for(y=0;y<CH;y++){
+    var r2=0,g2=0,b2=0; n=c1-c0;
+    for(x=c0;x<c1;x++){ i=(y*CW+x)*4; r2+=d[i]; g2+=d[i+1]; b2+=d[i+2]; }
+    rowM[y*3]=r2/n; rowM[y*3+1]=g2/n; rowM[y*3+2]=b2/n;
+  }
+  function edge(M,len,fromEnd){
+    function at(k){ var j=(fromEnd?len-1-k:k)*3; return [M[j],M[j+1],M[j+2]]; }
+    var a=0,bb=0,cc=0,cnt=0,k,p;
+    for(k=5;k<=10;k++){ p=at(k); a+=p[0]; bb+=p[1]; cc+=p[2]; cnt++; }
+    a/=cnt; bb/=cnt; cc/=cnt;
+    function far(k){ var q=at(k); return Math.sqrt((q[0]-a)*(q[0]-a)+(q[1]-bb)*(q[1]-bb)+(q[2]-cc)*(q[2]-cc))>thr; }
+    for(k=12;k<=90;k++) if(far(k)&&far(k+1)&&far(k+2)) return k;
+    return null;
+  }
+  return {l:edge(colM,CW,false), r:edge(colM,CW,true), t:edge(rowM,CH,false), b:edge(rowM,CH,true)};
+}
+
+function pair(a,c){
+  var t=a+c, share=t>0?a/t*100:50;
+  return {a:a,c:c,share:share,big:Math.max(share,100-share)};
+}
+function tierFor(big){
+  for(var i=0;i<TIERS.length;i++) if(big<=TIERS[i].max+1e-9) return TIERS[i].g;
+  return 1;
+}
+function scalePct(big){ return Math.max(0,Math.min(100,(big-50)/30*100)); }
+function round1(v){ return Math.round(v*10)/10; }
+
+/* ---- automatic card outline ---- */
+function boxDown(src,sw,sh,maxDim){
+  var f=Math.max(1,Math.ceil(Math.max(sw,sh)/maxDim)), w=Math.floor(sw/f), h=Math.floor(sh/f);
+  var out=new Float32Array(w*h*3), n=f*f, x,y,i,j,a,b,r,g,bl;
+  for(y=0;y<h;y++) for(x=0;x<w;x++){
+    r=0;g=0;bl=0;
+    for(b=0;b<f;b++){ i=((y*f+b)*sw+x*f)*4; for(a=0;a<f;a++,i+=4){ r+=src[i]; g+=src[i+1]; bl+=src[i+2]; } }
+    j=(y*w+x)*3; out[j]=r/n; out[j+1]=g/n; out[j+2]=bl/n;
+  }
+  return {d:out,w:w,h:h,f:f};
+}
+function blur3(a,w,h){
+  var t=new Float32Array(a.length), o=new Float32Array(a.length), x,y,i;
+  for(y=0;y<h;y++) for(x=0;x<w;x++){ i=y*w+x; t[i]=(a[x>0?i-1:i]+a[i]+a[x<w-1?i+1:i])/3; }
+  for(y=0;y<h;y++) for(x=0;x<w;x++){ i=y*w+x; o[i]=(t[y>0?i-w:i]+t[i]+t[y<h-1?i+w:i])/3; }
+  return o;
+}
+function otsu(hist,total){
+  var sum=0,i,wB=0,sB=0,best=0,bt=0;
+  for(i=0;i<256;i++) sum+=i*hist[i];
+  for(i=0;i<256;i++){
+    wB+=hist[i]; if(!wB) continue;
+    var wF=total-wB; if(!wF) break;
+    sB+=i*hist[i];
+    var mB=sB/wB, mF=(sum-sB)/wF, v=wB*wF*(mB-mF)*(mB-mF);
+    if(v>best){best=v;bt=i;}
+  }
+  return bt;
+}
+function morph(m,w,h,erode){
+  var o=new Uint8Array(m.length), x,y,dx,dy;
+  for(y=0;y<h;y++) for(x=0;x<w;x++){
+    var v=erode?1:0;
+    for(dy=-1;dy<=1;dy++){ var yy=y+dy;
+      for(dx=-1;dx<=1;dx++){ var xx=x+dx;
+        var q=(xx<0||yy<0||xx>=w||yy>=h)?(erode?1:0):m[yy*w+xx];
+        if(erode){ if(!q) v=0; } else if(q) v=1;
+      }
+    }
+    o[y*w+x]=v;
+  }
+  return o;
+}
+function hull(P){
+  P=P.slice().sort(function(a,b){return a[0]-b[0]||a[1]-b[1];});
+  var n=P.length, lo=[], up=[], i;
+  if(n<3) return P;
+  function cr(o,a,b){ return (a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]); }
+  for(i=0;i<n;i++){ while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],P[i])<=0) lo.pop(); lo.push(P[i]); }
+  for(i=n-1;i>=0;i--){ while(up.length>=2&&cr(up[up.length-2],up[up.length-1],P[i])<=0) up.pop(); up.push(P[i]); }
+  lo.pop(); up.pop();
+  return lo.concat(up);
+}
+function simplifyRing(P,eps){
+  var n=P.length, far=0, bd=-1, i;
+  if(n<=4) return P.slice();
+  for(i=1;i<n;i++){ var d=(P[i][0]-P[0][0])*(P[i][0]-P[0][0])+(P[i][1]-P[0][1])*(P[i][1]-P[0][1]); if(d>bd){bd=d;far=i;} }
+  var Q=P.concat([P[0]]), keep=new Uint8Array(n+1);
+  keep[0]=1; keep[far]=1; keep[n]=1;
+  function lineDist(p,a,b){ var dx=b[0]-a[0], dy=b[1]-a[1], l=Math.sqrt(dx*dx+dy*dy)||1; return Math.abs((p[0]-a[0])*dy-(p[1]-a[1])*dx)/l; }
+  function rdp(a,b){
+    var md=-1, idx=-1, k;
+    for(k=a+1;k<b;k++){ var d2=lineDist(Q[k],Q[a],Q[b]); if(d2>md){md=d2;idx=k;} }
+    if(md>eps){ keep[idx]=1; rdp(a,idx); rdp(idx,b); }
+  }
+  rdp(0,far); rdp(far,n);
+  var out=[]; for(i=0;i<n;i++) if(keep[i]) out.push(P[i]);
+  return out;
+}
+function bestQuad(R){
+  var n=R.length, best=-1, q=null, a,b,c,d;
+  if(n<4) return null;
+  for(a=0;a<n-3;a++) for(b=a+1;b<n-2;b++) for(c=b+1;c<n-1;c++) for(d=c+1;d<n;d++){
+    var A=R[a],B=R[b],C=R[c],D=R[d];
+    var ar=Math.abs((A[0]*B[1]-B[0]*A[1])+(B[0]*C[1]-C[0]*B[1])+(C[0]*D[1]-D[0]*C[1])+(D[0]*A[1]-A[0]*D[1]));
+    if(ar>best){best=ar;q=[A,B,C,D];}
+  }
+  return q;
+}
+function fitLine(P){
+  var n=P.length, mx=0, my=0, i;
+  for(i=0;i<n;i++){ mx+=P[i][0]; my+=P[i][1]; }
+  mx/=n; my/=n;
+  var xx=0, xy=0, yy=0;
+  for(i=0;i<n;i++){ var a=P[i][0]-mx, b=P[i][1]-my; xx+=a*a; xy+=a*b; yy+=b*b; }
+  var th=.5*Math.atan2(2*xy,xx-yy);
+  return {x:mx,y:my,dx:Math.cos(th),dy:Math.sin(th)};
+}
+function intersect(a,b){
+  var cr=a.dx*b.dy-a.dy*b.dx;
+  if(Math.abs(cr)<1e-6) return null;
+  var t=((b.x-a.x)*b.dy-(b.y-a.y)*b.dx)/cr;
+  return [a.x+t*a.dx,a.y+t*a.dy];
+}
+// Straight edge fits cancel the corner rounding, so each corner is the crossing of two fitted edges.
+function refineQuad(Q,B){
+  var lines=[], lens=[], i, k;
+  for(i=0;i<4;i++){
+    var A=Q[i], C=Q[(i+1)%4], dx=C[0]-A[0], dy=C[1]-A[1], len=Math.sqrt(dx*dx+dy*dy)||1;
+    lens.push(len);
+    var pts=[], tol=Math.max(4,.06*len);
+    for(k=0;k<B.length;k++){
+      var px=B[k][0]-A[0], py=B[k][1]-A[1], t=(px*dx+py*dy)/(len*len), dd=Math.abs(px*dy-py*dx)/len;
+      if(t>.18&&t<.82&&dd<tol) pts.push(B[k]);
+    }
+    var ln=pts.length>=8?fitLine(pts):null;
+    if(ln){
+      var tight=Math.max(2,.012*len);
+      var p2=pts.filter(function(p){ return Math.abs((p[0]-ln.x)*ln.dy-(p[1]-ln.y)*ln.dx)<tight; });
+      if(p2.length>=8) ln=fitLine(p2);
+    }
+    lines.push(ln||{x:A[0],y:A[1],dx:dx/len,dy:dy/len});
+  }
+  var ref=Math.max(lens[0],lens[1],lens[2],lens[3]), out=[];
+  for(i=0;i<4;i++){
+    var p=intersect(lines[(i+3)%4],lines[i]);
+    if(!p||Math.sqrt((p[0]-Q[i][0])*(p[0]-Q[i][0])+(p[1]-Q[i][1])*(p[1]-Q[i][1]))>.12*ref) p=Q[i];
+    out.push(p);
+  }
+  return out;
+}
+// Returns corners as TL,TR,BR,BL with the short side on top.
+function orderQuad(q){
+  var cx=0, cy=0, i;
+  for(i=0;i<4;i++){ cx+=q[i][0]; cy+=q[i][1]; }
+  cx/=4; cy/=4;
+  var s=q.slice().sort(function(a,b){ return Math.atan2(a[1]-cy,a[0]-cx)-Math.atan2(b[1]-cy,b[0]-cx); });
+  function L(a,b){ return Math.sqrt((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])); }
+  var best=-1e18, bs=null, r;
+  for(r=0;r<4;r++){
+    var p=[s[r],s[(r+1)%4],s[(r+2)%4],s[(r+3)%4]];
+    var top=(L(p[0],p[1])+L(p[2],p[3]))/2, side=(L(p[1],p[2])+L(p[3],p[0]))/2;
+    if(top>side) continue;
+    var score=(p[1][0]-p[0][0])+.5*(p[1][1]-p[0][1]);
+    if(score>best){ best=score; bs=p; }
+  }
+  return bs||s;
+}
+function findCard(src,sw,sh){
+  var ds=boxDown(src,sw,sh,640), w=ds.w, h=ds.h, D=ds.d, N=w*h, i,x,y;
+  if(w<20||h<20) return {ok:false,reason:'The photo is too small.'};
+  var rw=Math.max(2,Math.round(Math.min(w,h)*.03)), ring=[[],[],[]];
+  for(y=0;y<h;y++) for(x=0;x<w;x++){
+    if(x<rw||y<rw||x>=w-rw||y>=h-rw){ i=(y*w+x)*3; ring[0].push(D[i]); ring[1].push(D[i+1]); ring[2].push(D[i+2]); }
+  }
+  var bg=ring.map(function(a){ var t=Float32Array.from(a); t.sort(); return t[t.length>>1]; });
+  var dist=new Float32Array(N), dmax=0;
+  for(i=0;i<N;i++){
+    var dr=D[i*3]-bg[0], dg=D[i*3+1]-bg[1], db=D[i*3+2]-bg[2], v=Math.sqrt(dr*dr+dg*dg+db*db);
+    dist[i]=v; if(v>dmax) dmax=v;
+  }
+  if(dmax<30) return {ok:false,reason:'The card does not stand out from the background.'};
+  var sm=blur3(dist,w,h), hist=new Float32Array(256);
+  for(i=0;i<N;i++) hist[Math.min(255,(sm[i]/dmax*255)|0)]++;
+  var thr=Math.max(22,(otsu(hist,N)+1)/256*dmax);
+  var m=new Uint8Array(N);
+  for(i=0;i<N;i++) m[i]=sm[i]>thr?1:0;
+  // fill holes: anything the border flood cannot reach is card
+  var out=new Uint8Array(N), st=new Int32Array(N), sp=0, p;
+  function push(q){ if(!m[q]&&!out[q]){ out[q]=1; st[sp++]=q; } }
+  for(x=0;x<w;x++){ push(x); push((h-1)*w+x); }
+  for(y=0;y<h;y++){ push(y*w); push(y*w+w-1); }
+  while(sp){
+    p=st[--sp]; var px=p%w, py=(p/w)|0;
+    if(px>0) push(p-1); if(px<w-1) push(p+1); if(py>0) push(p-w); if(py<h-1) push(p+w);
+  }
+  for(i=0;i<N;i++) m[i]=out[i]?0:1;
+  m=morph(morph(m,w,h,true),w,h,true); m=morph(morph(m,w,h,false),w,h,false);
+  // largest blob
+  var lab=new Int32Array(N), best=0, bestId=0, id=0;
+  for(i=0;i<N;i++){
+    if(!m[i]||lab[i]) continue;
+    id++; sp=0; st[sp++]=i; lab[i]=id; var cnt=0;
+    while(sp){
+      p=st[--sp]; cnt++; var qx=p%w, qy=(p/w)|0;
+      if(qx>0&&m[p-1]&&!lab[p-1]){ lab[p-1]=id; st[sp++]=p-1; }
+      if(qx<w-1&&m[p+1]&&!lab[p+1]){ lab[p+1]=id; st[sp++]=p+1; }
+      if(qy>0&&m[p-w]&&!lab[p-w]){ lab[p-w]=id; st[sp++]=p-w; }
+      if(qy<h-1&&m[p+w]&&!lab[p+w]){ lab[p+w]=id; st[sp++]=p+w; }
+    }
+    if(cnt>best){ best=cnt; bestId=id; }
+  }
+  if(best<N*.04) return {ok:false,reason:'No card outline found.'};
+  var B=[];
+  for(y=0;y<h;y++) for(x=0;x<w;x++){
+    i=y*w+x; if(lab[i]!==bestId) continue;
+    if(x===0||lab[i-1]!==bestId) B.push([x,y+.5]);
+    if(x===w-1||lab[i+1]!==bestId) B.push([x+1,y+.5]);
+    if(y===0||lab[i-w]!==bestId) B.push([x+.5,y]);
+    if(y===h-1||lab[i+w]!==bestId) B.push([x+.5,y+1]);
+  }
+  var H=hull(B), eps=.004*Math.sqrt(w*w+h*h), R=simplifyRing(H,eps), g=0;
+  while(R.length>44&&g++<8){ eps*=1.6; R=simplifyRing(H,eps); }
+  var Q=bestQuad(R);
+  if(!Q) return {ok:false,reason:'No card outline found.'};
+  Q=refineQuad(Q,B).map(function(pt){ return [Math.max(0,Math.min(sw,pt[0]*ds.f)),Math.max(0,Math.min(sh,pt[1]*ds.f))]; });
+  Q=orderQuad(Q);
+  function L2(a,b){ return Math.sqrt((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])); }
+  var cw=(L2(Q[0],Q[1])+L2(Q[3],Q[2]))/2, ch=(L2(Q[1],Q[2])+L2(Q[0],Q[3]))/2, aspect=cw/ch;
+  if(!(aspect>=.55&&aspect<=.88)) return {ok:false,reason:'The outline does not look like a card.'};
+  return {ok:true,quad:Q,aspect:aspect,shaky:aspect<.64||aspect>.8,bg:bg};
+}
+
+/* ---- potential grades at other graders ---- */
+// Each ladder lists [largest share of the bigger border that still allows the grade, grade, pristine?], front of card only.
+// A photo is good to about 2%, so a "50/50" requirement is judged as 52/48 or better.
+var PRISTINE_MAX=52;
+var GRADERS=[
+  {id:'psa',name:'PSA',half:false,mode:'cap',
+   ladder:[[55,10],[60,9],[65,8],[70,7],[80,6],[85,5],[90,3],[100,1]],
+   check:'PSA grade definitions: front 55/45 for a 10, 60/40 for a 9, 65/35 for an 8, 70/30 for a 7.',
+   back:'The back also needs 75/25 or better for a 10 and 90/10 for a 9.'},
+  {id:'bgs',name:'BGS',half:true,mode:'sub',
+   lift:1,
+   ladder:[[PRISTINE_MAX,10,1],[55,9.5],[60,9],[65,8.5],[70,8],[100,null]],
+   check:'Approximate. Beckett publishes centering only for Pristine 10 (50/50 front, 55/45 back). The other steps come from third-party guides that do not fully agree. Beyond 70/30 is not calculated.',
+   back:'The back needs 55/45 or better for a Pristine 10.'},
+  {id:'cgc',name:'CGC',half:true,mode:'cap',
+   ladder:[[PRISTINE_MAX,10,1],[55,10],[60,9],[65,8],[70,7],[75,6],[85,4.5],[90,3.5],[100,3]],
+   check:'CGC grading scale: Pristine 10 is 50/50, Gem Mint 10 about 55/45, 9 is 60/40, 8 is 65/35, 7 is 70/30, 6 no worse than 75/25. CGC does not state centering for the half grades.',
+   back:'The back may not exceed 75/25 for a Gem Mint 10 and 90/10 for a 9.'},
+  {id:'ace',name:'ACE',half:false,mode:'sub',lift:2,
+   ladder:[[60,10],[65,9],[70,8],[75,7],[80,6],[85,3],[100,1]],
+   check:'ACE centering table: front 60/40 for a 10, 65/35 for a 9, 70/30 for an 8, 75/25 for a 7, 80/20 for a 6.',
+   back:'The back needs 60/40 for a 10 and 70/30 for a 9. ACE does not publish how its sub-grades combine, and adds an OC mark when centering is two or more grades below the overall grade.'},
+  {id:'tag',name:'TAG',half:true,mode:'cap',
+   ladder:[[PRISTINE_MAX,10,1],[55,10],[60,9],[62.5,8.5],[65,8],[67.5,7.5],[70,7],[72.5,6.5],[75,6],[77.5,5.5],[80,5],[82.5,4.5],[85,4],[87.5,3.5],[90,3],[92.5,2.5],[95,2],[100,1.5]],
+   check:'TAG grading scale: front about 51/49 for a Pristine 10, 55/45 for a 10, 60/40 for a 9, then steps of 2.5 points per half grade.',
+   back:'The back needs about 52/48 for a Pristine 10 and 65/35 for a Gem Mint 10 on TCG cards.'}
+];
+function ladderGrade(L,worst){
+  for(var i=0;i<L.length;i++) if(worst<=L[i][0]+1e-9) return {v:L[i][1],p:!!L[i][2]};
+  return {v:L[L.length-1][1],p:false};
+}
+var LEVEL_CAP=[10,9,8,6];
+// A level that is capped at an integer grade can still reach the half grade above it on half-point scales.
+function condCap(g,lvl){ var b=LEVEL_CAP[lvl]; return (g.half&&b<10)?b+.5:b; }
+function aiCapFor(g,a){ return g.half?Math.min(10,a+.5):a; }
+// worst = larger border share (50-100) on the worse axis. cond = {corners,edges,surface} levels or null. aiCap = integer or null.
+function estimateGrader(g,worst,cond,aiCap){
+  var cg=ladderGrade(g.ladder,worst), c=cg.v, names=['centering','corners','edges','surface'], vals, lo, hi, i;
+  if(c===null) return {id:g.id,name:g.name,unknown:true,mode:g.mode,held:['centering'],centering:null,lo:null,hi:null,range:false,pristine:false};
+  var conds=cond?[condCap(g,cond.corners),condCap(g,cond.edges),condCap(g,cond.surface)]:[10,10,10];
+  var ai=(aiCap==null)?null:aiCapFor(g,aiCap);
+  if(g.mode==='cap'){
+    vals=[c].concat(conds); if(ai!=null){ vals.push(ai); names=names.concat(['AI inspection']); }
+    lo=hi=Math.min.apply(null,vals);
+  } else {
+    // Sub-grade graders: the AI cap lands on the weakest condition sub-grade. The overall sits between the lowest sub-grade and their average,
+    // and no more than g.lift above the lowest. Neither BGS nor ACE publishes how its sub-grades combine, so the lift limit is this page's assumption.
+    var cs=conds.slice();
+    if(ai!=null){ var mi=0; for(i=1;i<3;i++) if(cs[i]<=cs[mi]) mi=i; cs[mi]=Math.min(cs[mi],ai); }
+    vals=[c].concat(cs);
+    lo=Math.min.apply(null,vals);
+    var avg=(vals[0]+vals[1]+vals[2]+vals[3])/4;
+    hi=g.half?Math.floor(avg*2+1e-9)/2:Math.floor(avg+1e-9);
+    hi=Math.min(hi,lo+(g.lift||1));
+    if(hi<lo) hi=lo;
+  }
+  var held=[];
+  if(lo<10) for(i=0;i<vals.length;i++) if(vals[i]<=lo+1e-9) held.push(names[i]);
+  return {id:g.id,name:g.name,centering:c,centeringPristine:cg.p,lo:lo,hi:hi,range:hi>lo+1e-9,mode:g.mode,held:held,pristine:cg.p&&lo>=10};
+}
+function estimateAll(worst,cond,aiCap){ return GRADERS.map(function(g){ return estimateGrader(g,worst,cond,aiCap); }); }
+function fmtGrade(v,pristine){ var s=(v%1)?v.toFixed(1):String(v); return pristine?s+' Pristine':s; }
+
+/* ---- condition: corners, edges, surface ---- */
+var LEVELS=[{name:'Sharp',cap:10},{name:'Light wear',cap:9},{name:'Visible wear',cap:8},{name:'Heavy wear',cap:6}];
+// Starting thresholds. They are guesses that still need tuning against cards with known grades.
+var TH={corner:[.03,.12,.30],edge:[.02,.08,.20],surface:[.004,.02,.05]};
+var CORNER_R=24, ZONE=28;
+function lvl(v,t){ return v<=t[0]?0:v<=t[1]?1:v<=t[2]?2:3; }
+function lum(r,g,b){ return .299*r+.587*g+.114*b; }
+function med(a){ var t=Float32Array.from(a); t.sort(); return t[t.length>>1]; }
+function rrSdf(x,y){
+  var cx=Math.min(Math.max(x,CORNER_R),CW-CORNER_R), cy=Math.min(Math.max(y,CORNER_R),CH-CORNER_R);
+  return Math.sqrt((x-cx)*(x-cx)+(y-cy)*(y-cy))-CORNER_R;
+}
+// d = flattened card RGBA, bd = border widths in px {l,r,t,b}. Counts whitening at corners and edges, and marks on the plain border.
+function analyseCondition(d,bd,bgc){
+  var R=[],G=[],B=[];
+  function take(x0,x1,y0,y1){
+    for(var yy=y0;yy<y1;yy+=2) for(var xx=x0;xx<x1;xx+=2){ var ii=(yy*CW+xx)*4; R.push(d[ii]); G.push(d[ii+1]); B.push(d[ii+2]); }
+  }
+  if(bd.l>=14) take(Math.round(bd.l*.4),bd.l-3,ZONE,CH-ZONE);
+  if(bd.r>=14) take(CW-bd.r+3,CW-Math.round(bd.r*.4),ZONE,CH-ZONE);
+  if(bd.t>=14) take(ZONE,CW-ZONE,Math.round(bd.t*.4),bd.t-3);
+  if(bd.b>=14) take(ZONE,CW-ZONE,CH-bd.b+3,CH-Math.round(bd.b*.4));
+  if(R.length<150) return null;
+  var ref=[med(R),med(G),med(B)], refL=lum(ref[0],ref[1],ref[2]);
+  // bgc is the colour around the card in the photo. A pixel that is closer to it than to the border colour is background that leaked into the crop, not wear.
+  function isBg(i){
+    if(!bgc) return false;
+    var r=d[i], g=d[i+1], b=d[i+2], br=r-bgc[0], bg2=g-bgc[1], bb=b-bgc[2], rr=r-ref[0], rg=g-ref[1], rb=b-ref[2];
+    var db2=br*br+bg2*bg2+bb*bb;
+    return db2<2025&&db2<rr*rr+rg*rg+rb*rb;
+  }
+  // The border colour shifts across a photo with uneven light, so wear is judged against the border colour beside it (12-26 px in from the edge), not one average for the whole card.
+  var refSide={};
+  ['t','r','b','l'].forEach(function(sd){
+    var len=(sd==='t'||sd==='b')?CW:CH, bw=sd==='t'?bd.t:sd==='b'?bd.b:sd==='l'?bd.l:bd.r;
+    var k0=12, k1=Math.min(bw-3,26), arr=[], s, a, k;
+    if(k1-k0<4){ refSide[sd]=null; return; }
+    for(s=0;s<len;s+=8){
+      var rr=[], gg=[], bb=[];
+      for(a=Math.max(ZONE,s-16);a<=Math.min(len-ZONE,s+16);a+=2) for(k=k0;k<k1;k+=2){
+        var px,py;
+        if(sd==='t'){ px=a; py=k; } else if(sd==='b'){ px=a; py=CH-1-k; } else if(sd==='l'){ px=k; py=a; } else { px=CW-1-k; py=a; }
+        var ii=(py*CW+px)*4; if(isBg(ii)) continue;
+        rr.push(d[ii]); gg.push(d[ii+1]); bb.push(d[ii+2]);
+      }
+      arr.push(rr.length>=6?[med(rr),med(gg),med(bb)]:null);
+    }
+    refSide[sd]=arr;
+  });
+  function sideRef(sd,s){ var a=refSide[sd]; if(!a) return null; return a[Math.min(a.length-1,Math.max(0,Math.round(s/8)))]||null; }
+  function worn(i,rf){
+    if(isBg(i)) return false;
+    rf=rf||ref;
+    var r=d[i], g=d[i+1], b=d[i+2];
+    if(lum(r,g,b)-lum(rf[0],rf[1],rf[2])<=22) return false;
+    var dr=r-rf[0], dg=g-rf[1], db=b-rf[2];
+    return dr*dr+dg*dg+db*db>1600;
+  }
+  // corners: share of whitened pixels in the 3.5 mm zone, inside the rounded outline and inside the border
+  var cs=[[0,0,1,1],[CW-1,0,-1,1],[CW-1,CH-1,-1,-1],[0,CH-1,1,-1]], corners=[], c, xx, yy;
+  function inBorder(k,x,y){
+    if(k===0) return x<bd.l-3||y<bd.t-3;
+    if(k===1) return CW-1-x<bd.r-3||y<bd.t-3;
+    if(k===2) return CW-1-x<bd.r-3||CH-1-y<bd.b-3;
+    return x<bd.l-3||CH-1-y<bd.b-3;
+  }
+  var cornerSides=[[['t',ZONE+8],['l',ZONE+8]],[['t',CW-ZONE-8],['r',ZONE+8]],[['b',CW-ZONE-8],['r',CH-ZONE-8]],[['b',ZONE+8],['l',CH-ZONE-8]]];
+  for(c=0;c<4;c++){
+    var tot=0, bad=0;
+    var ra=sideRef(cornerSides[c][0][0],cornerSides[c][0][1]), rb2=sideRef(cornerSides[c][1][0],cornerSides[c][1][1]);
+    var rfC=(ra&&rb2)?[(ra[0]+rb2[0])/2,(ra[1]+rb2[1])/2,(ra[2]+rb2[2])/2]:(ra||rb2||null);
+    for(yy=0;yy<ZONE;yy++) for(xx=0;xx<ZONE;xx++){
+      var px=cs[c][0]+cs[c][2]*xx, py=cs[c][1]+cs[c][3]*yy;
+      if(rrSdf(px+.5,py+.5)>-1||!inBorder(c,px,py)) continue;
+      if(isBg((py*CW+px)*4)) continue;
+      tot++; if(worn((py*CW+px)*4,rfC)) bad++;
+    }
+    corners.push(tot>0?bad/tot:0);
+  }
+  // edges: a column along the edge counts when at least half of its 2-10 px band is whitened
+  var edges={}, sides=['t','r','b','l'];
+  sides.forEach(function(sd){
+    var len=(sd==='t'||sd==='b')?CW:CH, flags=[], s, k, j;
+    for(s=ZONE;s<len-ZONE;s++){
+      var cnt=0, rfS=sideRef(sd,s);
+      for(k=2;k<10;k++){
+        var px2, py2;
+        if(sd==='t'){ px2=s; py2=k; } else if(sd==='b'){ px2=s; py2=CH-1-k; } else if(sd==='l'){ px2=k; py2=s; } else { px2=CW-1-k; py2=s; }
+        if(worn((py2*CW+px2)*4,rfS)) cnt++;
+      }
+      flags.push(cnt>=4?1:0);
+    }
+    var runs=[], start=-1, last=-1, gap=0, n=flags.length;
+    for(j=0;j<n;j++){
+      if(flags[j]){ if(start<0) start=j; last=j; gap=0; }
+      else if(start>=0){ gap++; if(gap>2){ if(last-start+1>=3) runs.push([start+ZONE,last+ZONE]); start=-1; gap=0; } }
+    }
+    if(start>=0&&last-start+1>=3) runs.push([start+ZONE,last+ZONE]);
+    var covered=0; runs.forEach(function(r){ covered+=r[1]-r[0]+1; });
+    edges[sd]={cov:covered/n,runs:runs};
+  });
+  // surface: pixels in the plain border that differ from their local 64 px median colour
+  var flagged=0, total=0;
+  function band(x0,x1,y0,y1,horiz){
+    if(x1-x0<6||y1-y0<6) return;
+    var lo=horiz?x0:y0, hi=horiz?x1:y1, a, x, y, i;
+    for(a=lo;a<hi;a+=64){
+      var e=Math.min(hi,a+64), X0=horiz?a:x0, X1=horiz?e:x1, Y0=horiz?y0:a, Y1=horiz?y1:e, sr=[], sg=[], sb=[];
+      for(y=Y0;y<Y1;y+=2) for(x=X0;x<X1;x+=2){ i=(y*CW+x)*4; sr.push(d[i]); sg.push(d[i+1]); sb.push(d[i+2]); }
+      if(sr.length<20) continue;
+      var mr=med(sr), mg=med(sg), mb=med(sb);
+      for(y=Y0;y<Y1;y++) for(x=X0;x<X1;x++){
+        i=(y*CW+x)*4; if(isBg(i)) continue;
+        var dr=d[i]-mr, dg=d[i+1]-mg, db=d[i+2]-mb;
+        total++; if(dr*dr+dg*dg+db*db>1156) flagged++;
+      }
+    }
+  }
+  band(9,bd.l-4,ZONE,CH-ZONE,false);
+  band(CW-bd.r+4,CW-9,ZONE,CH-ZONE,false);
+  band(ZONE,CW-ZONE,9,bd.t-4,true);
+  band(ZONE,CW-ZONE,CH-bd.b+4,CH-9,true);
+  var sf=total>0?flagged/total:0;
+  var cornerWorst=Math.max.apply(null,corners);
+  var edgeWorst=Math.max(edges.t.cov,edges.r.cov,edges.b.cov,edges.l.cov);
+  return {
+    ref:ref, corners:corners, edges:edges, surface:sf,
+    cornerLv:corners.map(function(v){ return lvl(v,TH.corner); }),
+    edgeLv:{t:lvl(edges.t.cov,TH.edge),r:lvl(edges.r.cov,TH.edge),b:lvl(edges.b.cov,TH.edge),l:lvl(edges.l.cov,TH.edge)},
+    lv:{corners:lvl(cornerWorst,TH.corner),edges:lvl(edgeWorst,TH.edge),surface:lvl(sf,TH.surface)}
+  };
+}
+// Rise width (10% to 90%, in px) of the printed border-to-panel step. Wider means softer focus. null when there is no clear step.
+function stepWidth(d,bd){
+  function L(x,y){ var i=(y*CW+x)*4; return lum(d[i],d[i+1],d[i+2]); }
+  function measure(v){
+    var n=v.length, bi=1, bg=0, i;
+    for(i=1;i<n;i++){ var g=Math.abs(v[i]-v[i-1]); if(g>bg){ bg=g; bi=i; } }
+    var a=0, b=0, na=0, nb=0;
+    for(i=0;i<n;i++){ if(i<bi-4){ a+=v[i]; na++; } else if(i>bi+3){ b+=v[i]; nb++; } }
+    if(!na||!nb) return null;
+    a/=na; b/=nb;
+    if(Math.abs(b-a)<30) return null;
+    var t10=-1, t90=-1;
+    for(i=0;i<n;i++){ var t=(v[i]-a)/(b-a); if(t10<0&&t>=.1) t10=i; if(t>=.9){ t90=i; break; } }
+    return (t10<0||t90<0)?null:Math.max(1,t90-t10+1);
+  }
+  var out=[], r0=(CH*.3)|0, r1=(CH*.7)|0, c0=(CW*.3)|0, c1=(CW*.7)|0;
+  [[bd.l,0],[CW-bd.r,0],[bd.t,1],[CH-bd.b,1]].forEach(function(e){
+    var p=e[0], v=[], i, s, n, x, y;
+    for(i=p-10;i<=p+10;i++){
+      s=0; n=0;
+      if(e[1]===0){ if(i<0||i>=CW) continue; for(y=r0;y<r1;y+=2){ s+=L(i,y); n++; } }
+      else { if(i<0||i>=CH) continue; for(x=c0;x<c1;x+=2){ s+=L(x,i); n++; } }
+      v.push(s/n);
+    }
+    var w=measure(v); if(w!==null) out.push(w);
+  });
+  if(!out.length) return null;
+  out.sort(function(a,b){ return a-b; });
+  return out[out.length>>1];
+}
+/*PURE_END*/
+
+var $=function(id){return document.getElementById(id);};
+var photo=$('photo'), pctx=photo.getContext('2d');
+var flatC=$('flat'), fctx=flatC.getContext('2d');
+var loupe=$('loupe'), lctx=loupe.getContext('2d');
+var statusEl=$('status');
+var S={src:null,sw:0,sh:0,data:null,quad:null,flat:document.createElement('canvas'),b:null,sens:50,found:{}};
+S.flat.width=CW; S.flat.height=CH;
+var flatCtx=S.flat.getContext('2d');
+
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'#0079A8'; }
+function say(t){ statusEl.textContent=t||''; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function mm(px){ return (px*MM).toFixed(1); }
+
+/* ---------- sample card ---------- */
+function drawCardFace(worn){
+  var c=document.createElement('canvas'); c.width=630; c.height=880;
+  var g=c.getContext('2d');
+  g.fillStyle='#E9B923'; g.fillRect(0,0,630,880);
+  var L=40,R=30,T=36,B=42, x0=L, y0=T, x1=630-R, y1=880-B;
+  g.fillStyle='#EDF1EE'; g.fillRect(x0,y0,x1-x0,y1-y0);
+  g.fillStyle='#1B2328'; g.textBaseline='alphabetic';
+  g.font='700 30px Arial,sans-serif'; g.fillText('Sample Card',x0+22,y0+52);
+  g.font='600 22px Arial,sans-serif'; g.textAlign='right'; g.fillText('HP 90',x1-22,y0+50); g.textAlign='left';
+  var ax=x0+22, ay=y0+78, aw=(x1-x0)-44, ah=360;
+  var gr=g.createLinearGradient(0,ay,0,ay+ah); gr.addColorStop(0,'#2E7FA6'); gr.addColorStop(1,'#1B3B63');
+  g.fillStyle=gr; g.fillRect(ax,ay,aw,ah);
+  g.fillStyle='#F2C94C'; g.beginPath(); g.arc(ax+aw*.7,ay+110,52,0,Math.PI*2); g.fill();
+  g.fillStyle='#17304F'; g.beginPath(); g.moveTo(ax,ay+ah); g.lineTo(ax+aw*.28,ay+190); g.lineTo(ax+aw*.52,ay+ah); g.closePath(); g.fill();
+  g.fillStyle='#10233C'; g.beginPath(); g.moveTo(ax+aw*.3,ay+ah); g.lineTo(ax+aw*.66,ay+160); g.lineTo(ax+aw,ay+ah); g.closePath(); g.fill();
+  g.strokeStyle='#1B2328'; g.lineWidth=3; g.strokeRect(ax,ay,aw,ah);
+  g.fillStyle='#1B2328'; g.font='700 24px Arial,sans-serif';
+  g.fillText('Edge Finder',x0+22,ay+ah+56); g.textAlign='right'; g.fillText('30',x1-22,ay+ah+56);
+  g.textAlign='left'; g.fillText('Perfect Split',x0+22,ay+ah+112); g.textAlign='right'; g.fillText('90+',x1-22,ay+ah+112); g.textAlign='left';
+  g.fillStyle='#6A7A82'; g.font='400 16px Arial,sans-serif';
+  g.fillText('Generated test card for HoloGrade.',x0+22,ay+ah+150);
+  g.fillText('Border left 4.0 mm, right 3.0 mm.',x0+22,ay+ah+174);
+  g.font='500 14px Arial,sans-serif'; g.fillText('001/100',x0+22,y1-16);
+  if(worn){
+    g.fillStyle='#F3F0E6';
+    g.beginPath(); g.moveTo(0,0); g.lineTo(28,0); g.lineTo(0,28); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(630,880); g.lineTo(610,880); g.lineTo(630,860); g.closePath(); g.fill();
+    [[120,40,10],[300,28,8],[470,16,6],[520,10,10]].forEach(function(r){ g.fillRect(630-r[2],r[0],r[2],r[1]); });
+    [[200,28],[400,10]].forEach(function(r){ g.fillRect(r[0],874,r[1],6); });
+    g.strokeStyle='rgba(250,246,205,.65)'; g.lineWidth=2; g.beginPath();
+    g.moveTo(12,420); g.lineTo(34,470); g.moveTo(14,600); g.lineTo(30,640); g.moveTo(180,12); g.lineTo(230,26); g.stroke();
+    g.fillStyle='rgba(110,80,10,.75)';
+    [[20,250],[26,700],[15,520],[330,20]].forEach(function(p){ g.beginPath(); g.arc(p[0],p[1],2.6,0,Math.PI*2); g.fill(); });
+  }
+  return c;
+}
+function makeSample(worn){
+  var face=drawCardFace(worn), fd=face.getContext('2d').getImageData(0,0,630,880).data;
+  var PW=1000, PH=1300;
+  var quad=[[190,170],[808,148],[842,1128],[158,1150]];
+  var cv=document.createElement('canvas'); cv.width=PW; cv.height=PH;
+  var g=cv.getContext('2d');
+  var bg=g.createRadialGradient(PW*.5,PH*.45,100,PW*.5,PH*.5,PH*.8);
+  bg.addColorStop(0,'#3A434A'); bg.addColorStop(1,'#1B2125');
+  g.fillStyle=bg; g.fillRect(0,0,PW,PH);
+  g.save(); g.shadowColor='rgba(0,0,0,.55)'; g.shadowBlur=40; g.shadowOffsetY=14; g.fillStyle='#000';
+  g.beginPath(); g.moveTo(quad[0][0],quad[0][1]); for(var q=1;q<4;q++) g.lineTo(quad[q][0],quad[q][1]); g.closePath(); g.fill(); g.restore();
+  var base=g.getImageData(0,0,PW,PH), bd=base.data;
+  var h=homography(quad,[[0,0],[630,0],[630,880],[0,880]]);
+  var minX=PW,maxX=0,minY=PH,maxY=0;
+  quad.forEach(function(p){ minX=Math.min(minX,p[0]); maxX=Math.max(maxX,p[0]); minY=Math.min(minY,p[1]); maxY=Math.max(maxY,p[1]); });
+  for(var y=Math.max(0,minY-2|0);y<Math.min(PH,maxY+3);y++){
+    for(var x=Math.max(0,minX-2|0);x<Math.min(PW,maxX+3);x++){
+      var uv=applyH(h,x+.5,y+.5), u=uv[0], v=uv[1];
+      if(u<-1||u>631||v<-1||v>881) continue;
+      var rx=Math.min(Math.max(u,30),600), ry=Math.min(Math.max(v,30),850);
+      var d=Math.sqrt((u-rx)*(u-rx)+(v-ry)*(v-ry))-30;
+      var cov=Math.max(0,Math.min(1,.5-d)); if(cov<=0) continue;
+      var su=clamp(u-.5,0,628.99), sv=clamp(v-.5,0,878.99), x0=su|0, y0=sv|0, fx=su-x0, fy=sv-y0;
+      var i00=(y0*630+x0)*4, i=(y*PW+x)*4;
+      for(var c=0;c<3;c++){
+        var tp=fd[i00+c]*(1-fx)+fd[i00+4+c]*fx, bt=fd[i00+2520+c]*(1-fx)+fd[i00+2524+c]*fx;
+        bd[i+c]=bd[i+c]*(1-cov)+(tp*(1-fy)+bt*fy)*cov;
+      }
+    }
+  }
+  g.putImageData(base,0,0);
+  return {canvas:cv,quad:quad};
+}
+
+/* ---------- source handling ---------- */
+function defaultQuad(sw,sh){
+  var hq=Math.min(sh*.78,sw*.78*7/5), wq=hq*5/7, cx=sw/2, cy=sh/2;
+  return [[cx-wq/2,cy-hq/2],[cx+wq/2,cy-hq/2],[cx+wq/2,cy+hq/2],[cx-wq/2,cy+hq/2]];
+}
+function setSource(canvas,quad,label){
+  S.src=canvas; S.sw=canvas.width; S.sh=canvas.height;
+  S.data=canvas.getContext('2d').getImageData(0,0,S.sw,S.sh).data;
+  S.quad=quad.map(function(p){return [p[0],p[1]];});
+  S.label=label;
+  photo.width=S.sw; photo.height=S.sh;
+  photo.style.width='min(100%,'+(72*S.sw/S.sh).toFixed(1)+'vh)';
+  $('srcTag').textContent=label;
+  S.cond=null; S.bg=null; S.aiTried=false; S.cornersOk=false; resetCond(); clearId(); clearLog(); resetSteps();
+  showFlow(); setTab('flat'); applyScanUI();
+  setStep('find','run','');
+  refresh(true);
+}
+function loadFile(file){
+  if(!file) return;
+  var rd=new FileReader();
+  rd.onerror=function(){ say('That file could not be read. Try a JPG or PNG photo.'); };
+  rd.onload=function(){
+    var img=new Image();
+    img.onerror=function(){ say('That file could not be opened as an image. Try a JPG or PNG photo.'); };
+    img.onload=function(){
+      var s=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight));
+      var c=document.createElement('canvas');
+      c.width=Math.max(2,Math.round(img.naturalWidth*s)); c.height=Math.max(2,Math.round(img.naturalHeight*s));
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      S.note='';
+      S.wantAi=!!$('useAi').checked;
+      startScan();
+      setSource(c,defaultQuad(c.width,c.height),'Your photo');
+      if(!S.wantAi) setStep('read','skip','Switched off');
+      var id=S.scanId; setTimeout(function(){ if(S.scanId===id&&S.src===c) autoCorners(); },650);
+    };
+    img.src=rd.result;
+  };
+  rd.readAsDataURL(file);
+}
+function autoCorners(){
+  if(!S.src) return;
+  var r=findCard(S.data,S.sw,S.sh);
+  if(r.ok){
+    S.quad=r.quad; S.bg=r.bg;
+    S.note=r.shaky?'Outline found, but the shape looks odd. Check the rings.':'Corners found. Drag any ring that is off.';
+    S.cornersOk=!r.shaky;
+    setStep('find',r.shaky?'fail':'ok',r.shaky?'Shape looks odd':'Card edge found');
+    if(r.shaky){ setTab('photo'); S.scan=false; applyScanUI(); }
+    else S.scanReady=true;
+  } else {
+    S.bg=null; S.cornersOk=false;
+    S.note=r.reason+' Drag the four rings to the corners.';
+    setStep('find','fail','Drag the corners');
+    setTab('photo'); S.scan=false; applyScanUI();
+  }
+  refresh(true);
+  if(S.cornersOk) maybeAutoAi();
+}
+function rotate(){
+  if(!S.src) return;
+  var c=document.createElement('canvas'); c.width=S.sh; c.height=S.sw;
+  var g=c.getContext('2d'); g.translate(S.sh,0); g.rotate(Math.PI/2); g.drawImage(S.src,0,0);
+  var q=S.quad.map(function(p){return [S.sh-p[1],p[0]];}), keepBg=S.bg;
+  var okc=S.cornersOk; S.scan=false;
+  setSource(c,[q[3],q[0],q[1],q[2]],S.label);
+  S.bg=keepBg; S.cornersOk=okc; setStep('find','ok','Rotated');
+}
+
+/* ---------- flow: start screen, steps, tabs ---------- */
+var STEP_IDS=['find','read','borders','corners','edges','surface'];
+var LABELS={find:['Locating the card','Card located'],read:['Reading the card','Card read'],borders:['Checking borders','Borders measured'],corners:['Checking corners','Corners checked'],edges:['Checking edges','Edges checked'],surface:['Checking surfaces','Surfaces checked']};
+var t0=0;
+function logLine(cls,text){
+  var ol=$('scanLog'), li=document.createElement('li'), tm=document.createElement('time'), sp=document.createElement('span');
+  li.className=cls; tm.textContent='+'+((Date.now()-t0)/1000).toFixed(1)+'s'; sp.textContent=text;
+  li.appendChild(tm); li.appendChild(sp);
+  var last=ol.lastElementChild; if(last&&last.className==='run') last.className='ok done';
+  ol.appendChild(li);
+}
+function setStep(k,state,sub){
+  var li=$('st-'+k); if(!li) return;
+  var prev=li.getAttribute('data-state');
+  li.setAttribute('data-state',state);
+  var sb=li.querySelector('.sub'); if(sb&&sub!==undefined) sb.textContent=sub;
+  if(S.scan&&prev!==state&&LABELS[k]){
+    if(state==='run') logLine('run',LABELS[k][0]);
+    else if(state==='ok') logLine('ok',LABELS[k][1]+(sub?': '+sub:''));
+    else if(state==='fail') logLine('fail',LABELS[k][0].replace('Checking','Could not check').replace('Reading','Could not read').replace('Locating','Could not locate')+(sub?': '+sub:''));
+    else if(state==='skip') logLine('ok',LABELS[k][0].replace(/ing /,' ').replace('Reading the card','Card reading')+' skipped'+(sub?': '+sub:''));
+  }
+}
+function resetSteps(){ STEP_IDS.forEach(function(k){ setStep(k,'wait',''); }); }
+function clearLog(){ $('scanLog').textContent=''; t0=Date.now(); }
+function applyScanUI(){
+  var on=!!S.scan;
+  $('flow').classList.toggle('scanning',on); $('results').classList.toggle('scanning',on);
+  $('scanSec').hidden=!on; $('scanfx').hidden=!on;
+}
+function startScan(){
+  S.scan=true; S.scanId=(S.scanId||0)+1; S.revealing=false; S.revealDone=false; S.scanReady=false;
+  var id=S.scanId;
+  setTimeout(function(){ if(S.scan&&S.scanId===id){ if(idCtl) idCtl.abort(); S.revealDone=true; finishScan(); } },90000);
+}
+function applyStepResult(k){
+  var c=S.cond;
+  if(k==='borders'){ setStep('borders','ok',S.measTxt||''); return; }
+  if(!c){ setStep(k,'fail','Border too narrow to read'); return; }
+  if(k==='corners') setStep(k,'ok',LEVELS[c.lv.corners].name);
+  if(k==='edges') setStep(k,'ok',LEVELS[c.lv.edges].name);
+  if(k==='surface') setStep(k,'ok',LEVELS[c.lv.surface].name);
+}
+function startReveal(){
+  S.revealing=true; var id=S.scanId, seq=['borders','corners','edges','surface'], i=0;
+  (function next(){
+    if(S.scanId!==id||!S.scan) return;
+    if(i>=seq.length){ S.revealDone=true; tryFinish(); return; }
+    var k=seq[i++]; setStep(k,'run','');
+    setTimeout(function(){ if(S.scanId!==id||!S.scan) return; applyStepResult(k); setTimeout(next,180); },560);
+  })();
+}
+function tryFinish(){ if(S.scan&&S.revealDone&&!idCtl) finishScan(); }
+function finishScan(){
+  S.scan=false; S.scanId++; applyScanUI(); render(); drawFlat();
+  if(window.innerWidth<980){ try{ $('gradeSec').scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} }
+}
+function showFlow(){ $('start').hidden=true; $('flow').hidden=false; }
+function showStart(){
+  clearId(); S.src=null; S.cond=null; S.ai=null; S.aiTried=true; S.scan=false; S.scanId=(S.scanId||0)+1; applyScanUI();
+  $('flow').hidden=true; $('start').hidden=false; say('');
+}
+function setTab(t){
+  var flat=t==='flat';
+  $('tabFlat').setAttribute('aria-selected',flat?'true':'false');
+  $('tabPhoto').setAttribute('aria-selected',flat?'false':'true');
+  $('panelFlat').style.display=flat?'grid':'none'; $('panelFlat').hidden=!flat;
+  $('panelPhoto').style.display=flat?'none':'grid'; $('panelPhoto').hidden=flat;
+  if(S.src){ redrawAll(); }
+}
+// Start the AI step on its own once the card is found and measured, but only for a user's photo and only if they allowed it.
+function maybeAutoAi(){
+  if(!S.src||!S.wantAi||S.aiTried||idCtl) return;
+  if(idState==='pending'){ setStep('read','wait','Checking AI access'); return; }
+  if(idState!=='ok'){ S.aiTried=true; setStep('read','skip','Not available here'); return; }
+  if(!S.cornersOk){ setStep('read','wait','Check the corners, then press Read'); return; }
+  S.aiTried=true; identify();
+}
+
+/* ---------- measuring ---------- */
+var raf=0;
+function schedule(redetect){ S.needDetect=S.needDetect||redetect; if(raf) return; raf=requestAnimationFrame(function(){ raf=0; var d=S.needDetect; S.needDetect=false; refresh(d); }); }
+function refresh(detect){
+  var out=flatten(S.data,S.sw,S.sh,S.quad);
+  if(!out){ say('The corners overlap. Spread them out to the four corners of the card.'); drawPhoto(); return; }
+  flatCtx.putImageData(new ImageData(out,CW,CH),0,0);
+  S.flatData=out;
+  if(detect||!S.b) runDetect();
+  drawPhoto(); drawFlat(); render(); sayNote(); scheduleCond();
+}
+function sayNote(){ say(((S.note||'')+' '+(S.warn||'')).trim()); }
+function runDetect(){
+  var r=S.flatData&&detectBorders(S.flatData,S.sens), miss=[];
+  var d={l:30,r:30,t:30,b:30};
+  ['l','r','t','b'].forEach(function(k){ if(r[k]==null){ miss.push({l:'left',r:'right',t:'top',b:'bottom'}[k]); } else d[k]=r[k]; });
+  S.b=d;
+  S.warn=miss.length?'Could not find the '+miss.join(' and ')+' border. Drag the line into place.':'';
+}
+function setAxis(id,p,n1,n2){
+  var big=Math.round(p.big);
+  $(id+'Big').textContent=big; $(id+'Small').textContent=100-big;
+  $(id+'A').style.width=p.share+'%'; $(id+'B').style.width=(100-p.share)+'%';
+  var a=$(id+'GapA'), b=$(id+'GapB');
+  a.textContent=n1+' '+mm(p.a)+' mm'; b.textContent=n2+' '+mm(p.c)+' mm';
+  a.className=p.a>=p.c?'strong':''; b.className=p.c>p.a?'strong':'';
+}
+function render(){
+  if(!S.b) return;
+  var lr=pair(S.b.l,S.b.r), tb=pair(S.b.t,S.b.b);
+  setAxis('lr',lr,'L','R'); setAxis('tb',tb,'T','B');
+  var lrWorse=lr.big>=tb.big, worst=lrWorse?lr:tb, other=lrWorse?tb:lr;
+  var wb=round1(worst.big), tier=tierFor(wb), ob=tierFor(round1(other.big));
+  var name=lrWorse?'Left/Right':'Top/Bottom', w=Math.round(worst.big), cond=S.cond, ai=S.ai, est=tier, lim=[];
+  var capList=[[tier,name+' centering '+w+'/'+(100-w)]];
+  if(cond) capList.push([LEVELS[cond.lv.corners].cap,'corners'],[LEVELS[cond.lv.edges].cap,'edges'],[LEVELS[cond.lv.surface].cap,'surface']);
+  if(ai) capList.push([ai.cap,'the AI inspection']);
+  capList.forEach(function(c){ if(c[0]<est) est=c[0]; });
+  capList.forEach(function(c){ if(c[0]===est&&est<10) lim.push(c[1]); });
+  S.est=est;
+  var g=$('grade');
+  g.textContent=(ai?'':'Up to ')+'PSA '+est;
+  g.className='grade g'+est;
+  $('basis').textContent=ai?'With AI inspection':'Measured only';
+  var why;
+  if(est===10) why=ai?'Centering, measured wear and the AI inspection all look like PSA 10 candidates.':'Centering and measured wear look like PSA 10 candidates.';
+  else {
+    var nm=lim.length>1?lim.slice(0,-1).join(', ')+' and '+lim[lim.length-1]:lim[0];
+    why=nm.charAt(0).toUpperCase()+nm.slice(1)+(lim.length>1?' limit':' limits')+' it to PSA '+est+'.';
+  }
+  if(!ai) why+=' This is an upper bound. Grime, creases and scratches on the card face are not measured. Run Read & inspect to check them.';
+  else if(ai.summary) why+=' '+ai.summary;
+  $('why').textContent=why;
+  renderValue();
+  var pl=$('pinLR'), pt=$('pinTB');
+  pl.textContent='L/R '+Math.round(lr.big); pt.textContent='T/B '+Math.round(tb.big);
+  pl.style.left=scalePct(round1(lr.big))+'%'; pt.style.left=scalePct(round1(tb.big))+'%';
+  var zones=document.querySelectorAll('.zone');
+  for(var i=0;i<zones.length;i++) zones[i].classList.toggle('on',+zones[i].getAttribute('data-g')===tier);
+  S.measTxt='L/R '+Math.round(lr.big)+'/'+(100-Math.round(lr.big))+' · T/B '+Math.round(tb.big)+'/'+(100-Math.round(tb.big));
+  if(!S.scan) setStep('borders','ok',S.measTxt);
+  $('miniGrade').textContent=g.textContent;
+  $('miniLR').textContent='L/R '+Math.round(lr.big)+'/'+(100-Math.round(lr.big));
+  $('miniTB').textContent='T/B '+Math.round(tb.big)+'/'+(100-Math.round(tb.big));
+  renderGraders(wb);
+}
+function renderGraders(worst){
+  var body=$('gRows'); body.textContent='';
+  var res=estimateAll(worst,S.cond?S.cond.lv:null,S.ai?S.ai.cap:null), upTo=S.ai?'':'Up to ';
+  function td(cls){ var t=document.createElement('td'); if(cls) t.className=cls; return t; }
+  res.forEach(function(r){
+    var tr=document.createElement('tr'), a=td('nm'), b=td('cg'), c=td('ov'), d=td('held');
+    var g=GRADERS.filter(function(x){ return x.id===r.id; })[0];
+    a.textContent=r.name; var sm=document.createElement('small'); sm.textContent=g.half?'half grades':'whole grades'; a.appendChild(sm);
+    if(r.unknown){
+      b.textContent='n/a'; c.textContent='Not calculated'; d.textContent='Centering is beyond what this grader publishes.';
+    } else {
+      b.textContent=fmtGrade(r.centering,r.centeringPristine);
+      var top=r.range?r.hi:r.lo;
+      c.className='ov g'+Math.max(6,Math.min(10,Math.floor(top)));
+      var lab=document.createElement('small'); lab.textContent=upTo?'Up to':(r.range?'About':''); if(lab.textContent) c.appendChild(lab);
+      var txt=upTo?fmtGrade(top,r.pristine):(r.range?fmtGrade(r.lo)+' to '+fmtGrade(r.hi):fmtGrade(r.lo,r.pristine));
+      c.appendChild(document.createTextNode(txt));
+      d.textContent=r.held.length?r.held.join(', '):(S.ai?'Nothing found':'Nothing measured');
+      var hb=document.createElement('span'); hb.className='hb'; hb.textContent='Held back by '+(r.held.length?r.held.join(', '):'nothing found'); c.appendChild(hb);
+    }
+    tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); tr.appendChild(d); body.appendChild(tr);
+  });
+}
+function renderSources(){
+  var ul=$('gSrc'); ul.textContent='';
+  GRADERS.forEach(function(g){
+    var li=document.createElement('li'), b=document.createElement('b');
+    b.textContent=g.name+': '; li.appendChild(b); li.appendChild(document.createTextNode(g.check+' '+g.back)); ul.appendChild(li);
+  });
+  var li=document.createElement('li'); li.textContent='SGC is not shown because its centering rules were not checked for this page.'; ul.appendChild(li);
+}
+
+/* ---------- drawing ---------- */
+function drawPhoto(){
+  if(!S.src) return;
+  var rect=photo.getBoundingClientRect(), k=rect.width?photo.width/rect.width:1;
+  var acc=cssVar('--accent'), q=S.quad, i;
+  pctx.clearRect(0,0,photo.width,photo.height);
+  pctx.drawImage(S.src,0,0);
+  pctx.save(); pctx.fillStyle='rgba(0,0,0,.38)'; pctx.beginPath();
+  pctx.rect(0,0,photo.width,photo.height);
+  pctx.moveTo(q[0][0],q[0][1]); for(i=1;i<4;i++) pctx.lineTo(q[i][0],q[i][1]); pctx.closePath();
+  pctx.fill('evenodd'); pctx.restore();
+  pctx.beginPath(); pctx.moveTo(q[0][0],q[0][1]); for(i=1;i<4;i++) pctx.lineTo(q[i][0],q[i][1]); pctx.closePath();
+  pctx.lineWidth=4*k; pctx.strokeStyle='rgba(255,255,255,.85)'; pctx.stroke();
+  pctx.lineWidth=1.8*k; pctx.strokeStyle=acc; pctx.stroke();
+  for(i=0;i<4;i++){
+    var x=q[i][0], y=q[i][1];
+    pctx.beginPath(); pctx.arc(x,y,14*k,0,Math.PI*2);
+    pctx.lineWidth=5*k; pctx.strokeStyle='rgba(255,255,255,.9)'; pctx.stroke();
+    pctx.lineWidth=2.2*k; pctx.strokeStyle=acc; pctx.stroke();
+    pctx.beginPath(); pctx.moveTo(x-8*k,y); pctx.lineTo(x+8*k,y); pctx.moveTo(x,y-8*k); pctx.lineTo(x,y+8*k);
+    pctx.lineWidth=1*k; pctx.strokeStyle='#fff'; pctx.stroke();
+  }
+}
+function rrect(g,x,y,w,h,r){
+  g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+}
+function pill(g,text,x,y,k,align){
+  g.font='600 '+(12*k)+'px "JetBrains Mono",monospace';
+  var w=g.measureText(text).width+10*k, h=20*k;
+  var rx=align==='center'?x-w/2:align==='right'?x-w:x;
+  g.fillStyle='rgba(8,12,14,.8)'; rrect(g,rx,y,w,h,4*k); g.fill();
+  g.fillStyle='#fff'; g.textBaseline='middle'; g.fillText(text,rx+5*k,y+h/2);
+}
+function drawFlat(){
+  fctx.drawImage(S.flat,0,0);
+  if(!S.b) return;
+  var rect=flatC.getBoundingClientRect(), k=rect.width?CW/rect.width:1;
+  var acc=cssVar('--accent'), b=S.b, xl=b.l, xr=CW-b.r, yt=b.t, yb=CH-b.b;
+  fctx.save(); fctx.globalAlpha=.22; fctx.fillStyle=acc;
+  fctx.fillRect(0,0,xl,CH); fctx.fillRect(xr,0,b.r,CH); fctx.fillRect(xl,0,xr-xl,yt); fctx.fillRect(xl,yb,xr-xl,b.b);
+  fctx.restore();
+  function line(x1,y1,x2,y2){
+    fctx.beginPath(); fctx.moveTo(x1,y1); fctx.lineTo(x2,y2);
+    fctx.lineWidth=4*k; fctx.strokeStyle='rgba(0,0,0,.6)'; fctx.stroke();
+    fctx.lineWidth=1.6*k; fctx.strokeStyle=acc; fctx.stroke();
+  }
+  line(xl,0,xl,CH); line(xr,0,xr,CH); line(0,yt,CW,yt); line(0,yb,CW,yb);
+  function grip(x,y){
+    fctx.beginPath(); fctx.arc(x,y,9*k,0,Math.PI*2); fctx.fillStyle=acc; fctx.fill();
+    fctx.lineWidth=2.5*k; fctx.strokeStyle='#fff'; fctx.stroke();
+  }
+  if(S.cond&&$('showMarks').checked) drawMarks(k);
+  grip(xl,CH*.82); grip(xr,CH*.18); grip(CW*.18,yt); grip(CW*.82,yb);
+  pill(fctx,'L '+mm(b.l)+' mm',xl+8*k,CH*.5-10*k,k,'left');
+  pill(fctx,'R '+mm(b.r)+' mm',xr-8*k,CH*.5-10*k,k,'right');
+  pill(fctx,'T '+mm(b.t)+' mm',CW/2,yt+8*k,k,'center');
+  pill(fctx,'B '+mm(b.b)+' mm',CW/2,yb-28*k,k,'center');
+}
+function redrawAll(){ drawPhoto(); drawFlat(); }
+
+/* ---------- photo handles ---------- */
+var dragCorner=-1;
+function photoPos(e){ var r=photo.getBoundingClientRect(); return [(e.clientX-r.left)*photo.width/r.width,(e.clientY-r.top)*photo.height/r.height,photo.width/r.width]; }
+function nearestCorner(p){
+  var best=-1,bd=1e9,i;
+  for(i=0;i<4;i++){ var d=Math.hypot(p[0]-S.quad[i][0],p[1]-S.quad[i][1]); if(d<bd){bd=d;best=i;} }
+  return bd<=36*p[2]?best:-1;
+}
+function showLoupe(i,k){
+  var x=S.quad[i][0], y=S.quad[i][1], half=22*k, acc=cssVar('--accent');
+  lctx.fillStyle='#000'; lctx.fillRect(0,0,176,176);
+  lctx.imageSmoothingEnabled=true;
+  lctx.drawImage(S.src,x-half,y-half,half*2,half*2,0,0,176,176);
+  lctx.strokeStyle=acc; lctx.lineWidth=1.5; lctx.beginPath();
+  lctx.moveTo(88,0); lctx.lineTo(88,176); lctx.moveTo(0,88); lctx.lineTo(176,88); lctx.stroke();
+  loupe.className='loupe '+(x<S.sw/2?'right':'left');
+  loupe.hidden=false;
+}
+photo.addEventListener('pointerdown',function(e){
+  if(!S.src) return;
+  var p=photoPos(e), i=nearestCorner(p);
+  if(i<0) return;
+  dragCorner=i; photo.setPointerCapture(e.pointerId); e.preventDefault();
+  showLoupe(i,p[2]);
+});
+photo.addEventListener('pointermove',function(e){
+  if(!S.src) return;
+  var p=photoPos(e);
+  if(dragCorner<0){ photo.style.cursor=nearestCorner(p)>=0?'grab':'default'; return; }
+  S.quad[dragCorner]=[clamp(p[0],0,S.sw),clamp(p[1],0,S.sh)];
+  showLoupe(dragCorner,p[2]);
+  drawPhoto(); schedule(true);
+});
+function endCorner(){ dragCorner=-1; loupe.hidden=true; }
+photo.addEventListener('pointerup',endCorner);
+photo.addEventListener('pointercancel',endCorner);
+
+/* ---------- flattened border lines ---------- */
+var dragLine=null;
+function flatPos(e){ var r=flatC.getBoundingClientRect(); return [(e.clientX-r.left)*CW/r.width,(e.clientY-r.top)*CH/r.height,CW/r.width]; }
+function nearestLine(p){
+  if(!S.b) return null;
+  var c=[['l',Math.abs(p[0]-S.b.l)],['r',Math.abs(p[0]-(CW-S.b.r))],['t',Math.abs(p[1]-S.b.t)],['b',Math.abs(p[1]-(CH-S.b.b))]];
+  c.sort(function(a,b){return a[1]-b[1];});
+  return c[0][1]<=24*p[2]?c[0][0]:null;
+}
+function setLine(n,p){
+  var b=S.b;
+  if(n==='l') b.l=clamp(p[0],1,CW-b.r-40);
+  else if(n==='r') b.r=clamp(CW-p[0],1,CW-b.l-40);
+  else if(n==='t') b.t=clamp(p[1],1,CH-b.b-40);
+  else b.b=clamp(CH-p[1],1,CH-b.t-40);
+}
+flatC.addEventListener('pointerdown',function(e){
+  var p=flatPos(e), n=nearestLine(p);
+  if(!n) return;
+  dragLine=n; flatC.setPointerCapture(e.pointerId); e.preventDefault();
+  setLine(n,p); drawFlat(); render(); scheduleCond();
+});
+flatC.addEventListener('pointermove',function(e){
+  var p=flatPos(e);
+  if(!dragLine){ var n=nearestLine(p); flatC.style.cursor=n?(n==='l'||n==='r'?'ew-resize':'ns-resize'):'default'; return; }
+  setLine(dragLine,p); drawFlat(); render(); scheduleCond();
+});
+function endLine(){ dragLine=null; }
+flatC.addEventListener('pointerup',endLine);
+flatC.addEventListener('pointercancel',endLine);
+
+/* ---------- controls ---------- */
+$('file').addEventListener('change',function(e){ loadFile(e.target.files&&e.target.files[0]); e.target.value=''; });
+$('sample').addEventListener('click',function(){ var s=makeSample(); S.note='Sample card loaded. Left border 4.0 mm, right border 3.0 mm.'; S.wantAi=false; startScan(); setSource(s.canvas,s.quad,'Sample card'); S.cornersOk=true; S.scanReady=true; setStep('find','ok','Sample card'); setStep('read','skip','Not run for samples'); });
+$('findCorners').addEventListener('click',autoCorners);
+$('rotate').addEventListener('click',rotate);
+$('resetCorners').addEventListener('click',function(){ if(!S.src) return; S.quad=defaultQuad(S.sw,S.sh); S.note='Corners reset. Drag the rings onto the card.'; refresh(true); });
+$('redetect').addEventListener('click',function(){ refresh(true); });
+$('sens').addEventListener('input',function(e){ S.sens=+e.target.value; schedule(true); });
+
+/* ---------- condition read-out ---------- */
+var condTimer=0, LC=['l0','l1','l2','l3'];
+function scheduleCond(){ clearTimeout(condTimer); condTimer=setTimeout(runCond,170); }
+function ppmOf(q){
+  function L(a,b){ return Math.sqrt((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])); }
+  return (((L(q[0],q[1])+L(q[3],q[2]))/2)/63+((L(q[1],q[2])+L(q[0],q[3]))/2)/88)/2;
+}
+function setCell(id,li,text,cap,det){
+  var l=$(id+'Lvl'); l.textContent=text; l.className='lvl '+LC[li];
+  $(id+'Cap').textContent=cap; $(id+'Det').textContent=det;
+}
+function resetCond(){ ['cCorners','cEdges','cSurface','cPhoto'].forEach(function(id){ setCell(id,1,'Analysing','',''); }); }
+function runCond(){
+  if(!S.flatData||!S.b) return;
+  var c=analyseCondition(S.flatData,S.b,S.bg);
+  if(c){
+    var ppm=ppmOf(S.quad), w=stepWidth(S.flatData,S.b);
+    c.photo={ppm:ppm,w:w,level:(ppm<8||(w!==null&&w>4.5))?3:(ppm<12||(w!==null&&w>2.5))?1:0};
+  }
+  S.cond=c; renderCond(); render(); drawFlat();
+  if(!S.scan) ['corners','edges','surface'].forEach(applyStepResult);
+  else if(S.scanReady&&!S.revealing) startReveal();
+}
+function renderCond(){
+  var c=S.cond;
+  if(!c){ ['cCorners','cEdges','cSurface','cPhoto'].forEach(function(id){ setCell(id,1,'No reading','','Border too narrow to read.'); }); return; }
+  function pc(v){ return Math.round(v*100)+'%'; }
+  function cap(l){ return l===0?'No cap from this':'Caps at PSA '+LEVELS[l].cap; }
+  setCell('cCorners',c.lv.corners,LEVELS[c.lv.corners].name,cap(c.lv.corners),'TL '+pc(c.corners[0])+' · TR '+pc(c.corners[1])+' · BR '+pc(c.corners[2])+' · BL '+pc(c.corners[3]));
+  setCell('cEdges',c.lv.edges,LEVELS[c.lv.edges].name,cap(c.lv.edges),'T '+pc(c.edges.t.cov)+' · R '+pc(c.edges.r.cov)+' · B '+pc(c.edges.b.cov)+' · L '+pc(c.edges.l.cov));
+  setCell('cSurface',c.lv.surface,LEVELS[c.lv.surface].name,cap(c.lv.surface),(c.surface*100).toFixed(1)+'% of border flagged');
+  var p=c.photo;
+  setCell('cPhoto',p.level,['Good','Fair','','Poor'][p.level],['Reads reliably','Some uncertainty','','Rough guide only'][p.level],p.ppm.toFixed(1)+' px/mm · '+(p.w===null?'sharpness n/a':p.w>4.5?'blurry':p.w>2.5?'soft':'sharp'));
+}
+function drawMarks(k){
+  var c=S.cond, col=['','--z8','--z7','--z6'], pts=[[14,14],[CW-14,14],[CW-14,CH-14],[14,CH-14]], i;
+  fctx.save(); fctx.lineCap='round';
+  for(i=0;i<4;i++){
+    var lv=c.cornerLv[i]; if(!lv) continue;
+    fctx.beginPath(); fctx.arc(pts[i][0],pts[i][1],22,0,Math.PI*2);
+    fctx.lineWidth=3*k; fctx.strokeStyle=cssVar(col[lv]); fctx.stroke();
+  }
+  ['t','r','b','l'].forEach(function(sd){
+    var lv=c.edgeLv[sd]; if(!lv) return;
+    fctx.strokeStyle=cssVar(col[lv]); fctx.lineWidth=5*k;
+    c.edges[sd].runs.forEach(function(r){
+      fctx.beginPath();
+      if(sd==='t'){ fctx.moveTo(r[0],6); fctx.lineTo(r[1]+1,6); }
+      else if(sd==='b'){ fctx.moveTo(r[0],CH-7); fctx.lineTo(r[1]+1,CH-7); }
+      else if(sd==='l'){ fctx.moveTo(6,r[0]); fctx.lineTo(6,r[1]+1); }
+      else { fctx.moveTo(CW-7,r[0]); fctx.lineTo(CW-7,r[1]+1); }
+      fctx.stroke();
+    });
+  });
+  fctx.restore();
+}
+
+/* ---------- worth grading ---------- */
+function num(id){ var v=parseFloat(String($(id).value).replace(',','.')); return isFinite(v)?v:NaN; }
+function money(v){ return (v<0?'-':'+')+'£'+Math.abs(v).toFixed(2); }
+function renderValue(){
+  var raw=num('vRaw'), v8=num('v8'), v9=num('v9'), v10=num('v10'), fee=num('vFee');
+  var rows=[['PSA 10',v10],['PSA 9',v9],['PSA 8 or lower',isNaN(v8)?raw:v8]];
+  var body=$('netRows'), est=S.est||10, on=est>=10?0:est===9?1:2, nets=[];
+  body.textContent='';
+  rows.forEach(function(r,idx){
+    var net=r[1]-fee-raw; nets.push(net);
+    var tr=document.createElement('tr'); if(idx===on) tr.className='on';
+    var a=document.createElement('td'); a.textContent=r[0];
+    var b=document.createElement('td'); b.textContent=isNaN(r[1])?'-':'£'+r[1].toFixed(2);
+    var c=document.createElement('td'); c.textContent=isNaN(net)?'-':money(net);
+    if(!isNaN(net)) c.className=net>=0?'pos':'neg';
+    tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); body.appendChild(tr);
+  });
+  var sum=$('netSum');
+  if(isNaN(raw)||isNaN(fee)||isNaN(nets[0])||isNaN(nets[1])){ sum.textContent='Enter the raw price, grading fee and the PSA 9 and PSA 10 prices.'; return; }
+  var msg='At your estimated ceiling (PSA '+est+'): '+money(nets[on])+' against selling raw. ';
+  msg+=nets[2]>=0?'It pays off even at PSA 8 or lower.':nets[1]>=0?'It breaks even at PSA 9 or better.':nets[0]>=0?'It only breaks even at PSA 10.':'It does not break even at any grade with these prices.';
+  sum.textContent=msg;
+}
+function saveValues(){
+  try{ localStorage.setItem('dc_values',JSON.stringify(['vRaw','v8','v9','v10','vFee'].map(function(id){ return $(id).value; }))); }catch(e){}
+}
+function loadValues(){
+  try{
+    var v=JSON.parse(localStorage.getItem('dc_values')||'null');
+    if(v&&v.length===5){ ['vRaw','v8','v9','v10','vFee'].forEach(function(id,i){ $(id).value=String(v[i]); }); $('exChip').hidden=true; }
+  }catch(e){}
+}
+
+/* ---------- card recognition (AI model) ---------- */
+var sampleFn=null, idState='pending', idCtl=null;
+var ID_PROMPT='This image is the front of one Pokémon Trading Card Game card, already cropped and straightened from a photo. Do two jobs: identify the card from its printed text, and inspect its physical condition the way a strict PSA grader would.\n\n'
+ +'Reply with only one JSON object with these keys:\n'
+ +'{"is_pokemon_card": boolean, "name": string or null, "card_number": string or null, "set_name": string or null, "rarity": string or null, "finish": string or null, "language": string or null, "hp": number or null, "confidence": "high" | "medium" | "low", "notes": string, "condition": {"max_psa": integer from 1 to 10, "summary": string, "defects": [{"where": string, "type": string, "severity": "minor" | "moderate" | "major"}], "photo_limits": string}}\n\n'
+ +'Identification rules: card_number is exactly as printed, for example "125/197". Use null for anything you cannot read or are not sure of. Do not guess the set from the artwork alone: if the number or set symbol is unreadable, set set_name to null and lower the confidence. finish is one of "holo", "reverse holo", "non-holo", "full art", "unknown". notes is one short sentence on what was hard to read. If the image is not a Pokémon card, set is_pokemon_card to false.\n\n'
+ +'Condition rules: look at the corners, the edges, the border and the whole printed face. Report only defects you can actually see: whitening, chipping or rounding on corners and edges; creases, dents and bends; scratches, scuffs and print lines; dirt, grime, smudges, stains, ink marks, water damage or yellowing; cracked foil. Do not assume the card is clean. A photo can hide defects but cannot add them. "where" is short, such as "bottom edge, centre" or "text box, lower right". List the most important defects first, at most 8. max_psa is the highest PSA grade this card could plausibly receive on condition alone, ignoring centering. Anchors: 10 means no flaw you can see; 9 allows one or two very faint flaws; 8 allows light whitening on a few corners or edges, or faint scuffing; 7 means minor but obvious wear; 6 and 5 mean clear wear on corners and edges, or noticeable scuffs, dirt or a light crease; 4 or lower means creases, heavy dirt, stains or heavy edge wear. summary is one short sentence. photo_limits is one short sentence on anything that stopped you judging well (glare, blur, low resolution), or an empty string.';
+function idIdleNote(){
+  return idState==='pending'?'Checking AI access...':idState==='ok'?'Sends the straightened card image to an AI model to identify it and inspect its condition. Counts toward your usage.':'Reading the card needs AI access, which this view does not have.';
+}
+function updateIdUI(){ $('identify').disabled=idState!=='ok'; if(!idCtl&&$('idResult').hidden) $('idNote').textContent=idIdleNote(); if(S.src&&S.cornersOk) maybeAutoAi(); }
+function clearId(){
+  if(idCtl){ try{ idCtl.abort(); }catch(e){} idCtl=null; }
+  S.ai=null; $('aiBox').hidden=true; $('identify').textContent='Read & inspect';
+  $('idResult').hidden=true; $('stopId').hidden=true; $('identify').disabled=idState!=='ok'; $('idNote').textContent=idIdleNote();
+}
+(function(){
+  var cl=window.claude;
+  if(!cl||typeof cl.use!=='function'){ idState='none'; updateIdUI(); return; }
+  cl.use('sample').then(function(s){
+    if(!s){ idState='none'; updateIdUI(); return; }
+    sampleFn=s;
+    return s.limits().then(function(l){ idState=(l&&l.images)?'ok':'none'; },function(){ idState='none'; }).then(updateIdUI);
+  },function(){ idState='none'; updateIdUI(); });
+})();
+function updateLinks(){
+  var q=$('q').value.trim(), e=encodeURIComponent(q);
+  $('lnkEbay').href='https://www.ebay.co.uk/sch/i.html?_nkw='+e+'&LH_Sold=1&LH_Complete=1';
+  $('lnkTcg').href='https://www.tcgplayer.com/search/pokemon/product?q='+e+'&view=grid';
+  $('lnkCm').href='https://www.cardmarket.com/en/Pokemon/Products/Search?searchString='+e;
+  $('idSearch').hidden=!q;
+}
+function clip(v,n){ return v==null?'':String(v).slice(0,n||80); }
+// The AI condition read. It can only lower the ceiling, never raise it.
+function applyInspection(r){
+  var box=$('aiBox'), list=$('aiList');
+  S.ai=null; list.textContent=''; box.hidden=true;
+  var cd=(r&&typeof r==='object'&&r.is_pokemon_card!==false)?r.condition:null;
+  if(!cd||typeof cd!=='object'||typeof cd.max_psa!=='number'||!isFinite(cd.max_psa)) return;
+  var cap=Math.max(1,Math.min(10,Math.round(cd.max_psa)));
+  S.ai={cap:cap,summary:clip(cd.summary,170)};
+  $('aiCap').textContent=cap<10?'Condition caps this card at PSA '+cap+'.':'No condition cap found.';
+  var defects=Array.isArray(cd.defects)?cd.defects.slice(0,8):[];
+  defects.forEach(function(df){
+    if(!df||typeof df!=='object') return;
+    var sev=['minor','moderate','major'].indexOf(df.severity)>=0?df.severity:'minor';
+    var li=document.createElement('li'), chip=document.createElement('span'), tx=document.createElement('span');
+    chip.className='chip sev-'+sev; chip.textContent=sev;
+    tx.className='txt'; tx.textContent=[clip(df.where,60),clip(df.type,80)].filter(Boolean).join(': ');
+    li.appendChild(chip); li.appendChild(tx); list.appendChild(li);
+  });
+  $('aiLimits').textContent=(cd.photo_limits?clip(cd.photo_limits,170)+' ':'')+'An AI read of a photo, not a grade. Compare it with the real card.';
+  box.hidden=false;
+}
+function showCard(r){
+  var meta=$('idMeta'); meta.textContent='';
+  if(!r||typeof r!=='object'||r.is_pokemon_card===false||!r.name){
+    $('idName').textContent='No card recognised';
+    $('idNotes').textContent=(r&&r.notes)?clip(r.notes):'No Pokémon card could be read in this image. Check the corners and try again.';
+    $('q').value=''; updateLinks();
+  } else {
+    $('idName').textContent=clip(r.name);
+    var parts=[clip(r.set_name),clip(r.card_number),clip(r.rarity),(r.finish&&r.finish!=='unknown')?clip(r.finish):'',clip(r.language),(typeof r.hp==='number')?'HP '+r.hp:''];
+    parts.forEach(function(t){ if(!t) return; var s=document.createElement('span'); s.className='chip'; s.textContent=t; meta.appendChild(s); });
+    if(r.confidence){ var cf=document.createElement('span'); cf.className='chip'; cf.textContent='Confidence '+clip(r.confidence); meta.appendChild(cf); }
+    $('idNotes').textContent=(r.notes?clip(r.notes)+' ':'')+'Check the name and number against the card before you rely on them.';
+    $('q').value=[clip(r.name),clip(r.card_number),clip(r.set_name)].filter(Boolean).join(' ');
+    updateLinks();
+  }
+  $('idResult').hidden=false;
+}
+function idError(code){
+  var m={not_granted:'AI access was declined for this page. Allow it to read cards.',rate_limited:'Too many requests. Try again in a moment.',
+    sampling_disabled:'Card recognition is not available on this account.',capability_disabled:'Card recognition is not available on this account.',
+    not_declared:'Card recognition is not available on this account.',capability_removed:'Card recognition is not available in this viewer.',
+    images_unavailable:'Card recognition is not available in this viewer.',image_rejected:'The card image was rejected. Adjust the corners and try again.',
+    invalid_json:'The reply could not be read. Try again.',empty_completion:'Nothing came back. Try again.',
+    refused:'This image could not be read.',session_expired:'Your session expired. Sign in again and retry.'};
+  return m[code]||'Something went wrong. Try again.';
+}
+async function identify(){
+  if(!S.src||!sampleFn||idCtl) return;
+  var scale=Math.max(1,Math.min(2,ppmOf(S.quad)/8)), W=Math.round(CW*scale), H=Math.round(CH*scale);
+  var px=flattenTo(S.data,S.sw,S.sh,S.quad,W,H);
+  if(!px){ $('idNote').textContent='Place the four corners on the card first.'; return; }
+  var c=document.createElement('canvas'); c.width=W; c.height=H;
+  c.getContext('2d').putImageData(new ImageData(px,W,H),0,0);
+  var blob=await new Promise(function(res){ c.toBlob(res,'image/jpeg',.92); });
+  if(!blob){ $('idNote').textContent='Could not prepare the image.'; return; }
+  var ctl=new AbortController(); idCtl=ctl;
+  $('idResult').hidden=true; $('identify').disabled=true; $('stopId').hidden=false; $('idNote').textContent='Reading and inspecting the card...';
+  S.aiTried=true; setStep('read','run','Reading the printed text'); $('skipAi').hidden=false;
+  try{
+    var r=await sampleFn.json(ID_PROMPT,{images:[blob],modelTier:'default',signal:ctl.signal});
+    if(idCtl!==ctl) return;
+    idCtl=null; $('stopId').hidden=true; $('identify').disabled=false;
+    $('idNote').textContent='Card image sent for AI reading.';
+    showCard(r); applyInspection(r); render();
+    $('identify').textContent='Run again';
+    $('skipAi').hidden=true;
+    var rd=$('idName').textContent;
+    setStep('read',S.ai?'ok':'fail',S.ai?(rd+(S.ai.cap<10?' · condition caps at PSA '+S.ai.cap:' · no condition cap')):'No usable reading');
+    tryFinish();
+  }catch(e){
+    if(idCtl!==ctl) return;
+    idCtl=null; $('stopId').hidden=true;
+    var code=e&&e.code;
+    $('skipAi').hidden=true;
+    setStep('read',code==='cancelled'?'skip':'fail',code==='cancelled'?'Skipped':idError(code));
+    setTimeout(tryFinish,0);
+    var gone=['sampling_disabled','capability_disabled','not_declared','capability_removed','images_unavailable'].indexOf(code)>=0;
+    if(gone) idState='none';
+    $('identify').disabled=idState!=='ok';
+    $('idNote').textContent=code==='cancelled'?idIdleNote():idError(code);
+  }
+}
+
+$('worn').addEventListener('click',function(){ var s=makeSample(true); S.note='Worn sample loaded. It has corner whitening, edge nicks and a few border scratches.'; S.wantAi=false; startScan(); setSource(s.canvas,s.quad,'Worn sample'); S.cornersOk=true; S.scanReady=true; setStep('find','ok','Sample card'); setStep('read','skip','Not run for samples'); });
+$('showMarks').addEventListener('change',drawFlat);
+$('identify').addEventListener('click',identify);
+$('stopId').addEventListener('click',function(){ if(idCtl) idCtl.abort(); });
+$('q').addEventListener('input',updateLinks);
+['vRaw','v8','v9','v10','vFee'].forEach(function(id){ $(id).addEventListener('input',function(){ $('exChip').hidden=true; saveValues(); renderValue(); }); });
+loadValues();
+
+if(window.ResizeObserver){ var ro=new ResizeObserver(redrawAll); ro.observe(photo); ro.observe(flatC); }
+if(window.matchMedia){ var mq=window.matchMedia('(prefers-color-scheme: dark)'); if(mq.addEventListener) mq.addEventListener('change',redrawAll); }
+new MutationObserver(redrawAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+/* ---------- start screen wiring ---------- */
+$('tabFlat').addEventListener('click',function(){ setTab('flat'); });
+$('tabPhoto').addEventListener('click',function(){ setTab('photo'); });
+$('backStart').addEventListener('click',showStart);
+$('skipAi').addEventListener('click',function(){ if(idCtl) idCtl.abort(); });
+try{ if(localStorage.getItem('dc_useAi')==='0') $('useAi').checked=false; }catch(e){}
+$('useAi').addEventListener('change',function(){ try{ localStorage.setItem('dc_useAi',this.checked?'1':'0'); }catch(e){} });
+var dz=$('dropzone');
+['dragenter','dragover'].forEach(function(ev){ dz.addEventListener(ev,function(e){ e.preventDefault(); dz.classList.add('over'); }); });
+['dragleave','drop'].forEach(function(ev){ dz.addEventListener(ev,function(e){ e.preventDefault(); dz.classList.remove('over'); }); });
+dz.addEventListener('drop',function(e){ var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) loadFile(f); });
+window.addEventListener('dragover',function(e){ e.preventDefault(); });
+window.addEventListener('drop',function(e){ e.preventDefault(); var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f&&e.target!==dz&&!dz.contains(e.target)) loadFile(f); });
+renderSources();
+})();
+</script>
