@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).json({error:'POST only'}); return; }
 
-  const key = process.env.ANTHROPIC_API_KEY;
+  const key = process.env.GEMINI_API_KEY;
   if (!key) { res.status(503).json({error:'AI inspection is not configured on this server.'}); return; }
 
   const { image } = req.body || {};
@@ -15,28 +15,32 @@ export default async function handler(req, res) {
     + 'Condition rules: look at the corners, the edges, the border and the whole printed face. Report only defects you can actually see: whitening, chipping or rounding on corners and edges; creases, dents and bends; scratches, scuffs and print lines; dirt, grime, smudges, stains, ink marks, water damage or yellowing; cracked foil. Do not assume the card is clean. A photo can hide defects but cannot add them. "where" is short, such as "bottom edge, centre" or "text box, lower right". List the most important defects first, at most 8. max_psa is the highest PSA grade this card could plausibly receive on condition alone, ignoring centering. Anchors: 10 means no flaw you can see; 9 allows one or two very faint flaws; 8 allows light whitening on a few corners or edges, or faint scuffing; 7 means minor but obvious wear; 6 and 5 mean clear wear on corners and edges, or noticeable scuffs, dirt or a light crease; 4 or lower means creases, heavy dirt, stains or heavy edge wear. summary is one short sentence. photo_limits is one short sentence on anything that stopped you judging well (glare, blur, low resolution), or an empty string.';
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: [
-          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } },
-          { type: 'text', text: prompt }
-        ]}]
-      })
-    });
+    const resp = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + key,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { inlineData: { mimeType: 'image/jpeg', data: image } },
+            { text: prompt }
+          ]}],
+          generationConfig: { maxOutputTokens: 1024, temperature: 0.2 }
+        })
+      }
+    );
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      const msg = (err.error && err.error.message) || 'Anthropic API error ' + resp.status;
+      const msg = (err.error && err.error.message) || 'Gemini API error ' + resp.status;
       res.status(resp.status === 429 ? 429 : 502).json({ error: msg });
       return;
     }
 
     const data = await resp.json();
-    const text = (data.content && data.content[0] && data.content[0].text) || '';
+    const text = (data.candidates && data.candidates[0] && data.candidates[0].content
+      && data.candidates[0].content.parts && data.candidates[0].content.parts[0]
+      && data.candidates[0].content.parts[0].text) || '';
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) { res.status(502).json({ error: 'No JSON in AI response.' }); return; }
 

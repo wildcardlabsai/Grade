@@ -315,6 +315,17 @@ details[open]>summary{margin-bottom:10px}
   .cell:nth-child(n+3){border-top:1px solid var(--line)}
   .lvl{font-size:22px}
 }
+/* save / history */
+.save-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.history{display:grid;gap:10px;margin-top:12px}
+.history h3{margin:0;font-family:var(--font-display);font-weight:600;font-size:16px}
+.hlist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.hlist li{cursor:pointer;border:1px solid var(--line);border-radius:4px;background:var(--surface);padding:8px;display:grid;gap:4px;font-size:12px}
+.hlist li:hover{border-color:var(--accent)}
+.hlist .hthumb{width:100%;aspect-ratio:504/704;object-fit:cover;border-radius:2px;background:var(--line)}
+.hlist .hname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hlist .hgrade{font:600 13px var(--font-mono);color:var(--accent)}
+.hlist .hdate{font:400 11px var(--font-mono);color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.scanfx .beam{animation:none;top:50%}.scanlog li.run span::after{animation:none}.pin{transition:none}.steps li[data-state="run"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .steps li[data-state="run"] .dot{animation:none}}
 </style>
@@ -354,6 +365,11 @@ details[open]>summary{margin-bottom:10px}
       <li><b>Square on, card fills the frame</b>Hold the phone above the card, level with it.</li>
     </ul>
     <p class="try">No card to hand? <button class="btn" id="sample" type="button">Try a sample card</button> <button class="btn" id="worn" type="button">Try a worn sample</button></p>
+    <div class="history" id="historyBox" hidden>
+      <h3>Recent scans</h3>
+      <ul class="hlist" id="historyList"></ul>
+      <button class="btn quiet" id="clearHistory" type="button">Clear history</button>
+    </div>
     <div class="info">
       <section aria-labelledby="ih1">
         <h3 id="ih1">What it checks</h3>
@@ -384,7 +400,7 @@ details[open]>summary{margin-bottom:10px}
         <h3 id="ih4">Questions</h3>
         <details><summary>Do I need an account?</summary><p>No. There is no sign-up and HoloGrade stores nothing about you or your cards.</p></details>
         <details><summary>Where does my photo go?</summary><p>Finding the card and measuring it happen in your browser. If the AI option is on, the straightened card image is sent to an AI model to read the name and check condition. Turn it off to measure only.</p></details>
-        <details><summary>Is it free?</summary><p>Measuring is free. The optional AI reading counts toward your own usage allowance.</p></details>
+        <details><summary>Is it free?</summary><p>Yes. Measuring happens in your browser and the AI card reading is free.</p></details>
         <details><summary>How accurate is it?</summary><p>Border measurements are good to roughly 2% on a sharp, square-on photo. Wear detection is newer, so treat it as a guide and compare it with the real card.</p></details>
       </section>
     </div>
@@ -485,6 +501,9 @@ details[open]>summary{margin-bottom:10px}
               <thead><tr><th>Grader</th><th>Centering</th><th>Overall</th><th>Held back by</th></tr></thead>
               <tbody id="gRows"></tbody>
             </table>
+          </div>
+          <div class="save-row">
+            <button class="btn" id="saveReport" type="button" disabled>Save report image</button>
           </div>
           <p class="gnote">Front of the card only. A Pristine or 10 also needs flawless corners, edges and surface, which a photo cannot confirm. BGS and ACE show a range because neither publishes how its sub-grades combine.</p>
           <details>
@@ -1317,7 +1336,8 @@ function finishScan(){
 function showFlow(){ $('start').hidden=true; $('flow').hidden=false; }
 function showStart(){
   clearId(); S.src=null; S.cond=null; S.ai=null; S.aiTried=true; S.scan=false; S.scanId=(S.scanId||0)+1; applyScanUI();
-  $('flow').hidden=true; $('start').hidden=false; say('');
+  $('flow').hidden=true; $('start').hidden=false; $('saveReport').disabled=true; say('');
+  if(typeof renderHistory==='function') renderHistory();
 }
 function setTab(t){
   var flat=t==='flat';
@@ -1384,7 +1404,7 @@ function render(){
     var nm=lim.length>1?lim.slice(0,-1).join(', ')+' and '+lim[lim.length-1]:lim[0];
     why=nm.charAt(0).toUpperCase()+nm.slice(1)+(lim.length>1?' limit':' limits')+' it to PSA '+est+'.';
   }
-  if(!ai) why+=' This is an upper bound. Grime, creases and scratches on the card face are not measured. Run Read & inspect to check them.';
+  if(!ai) why+=' This is an upper bound. Grime, creases and scratches on the card face are not measured by pixel analysis alone.';
   else if(ai.summary) why+=' '+ai.summary;
   $('why').textContent=why;
   var pl=$('pinLR'), pt=$('pinTB');
@@ -1749,6 +1769,99 @@ var dz=$('dropzone');
 dz.addEventListener('drop',function(e){ var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) loadFile(f); });
 window.addEventListener('dragover',function(e){ e.preventDefault(); });
 window.addEventListener('drop',function(e){ e.preventDefault(); var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f&&e.target!==dz&&!dz.contains(e.target)) loadFile(f); });
+/* ---------- save report image ---------- */
+function generateReport(){
+  var W=600, pad=24, y=pad;
+  var rc=document.createElement('canvas'); rc.width=W;
+  var g=rc.getContext('2d');
+  function txt(t,x,yy,font,fill,maxW){ g.font=font; g.fillStyle=fill; if(maxW) g.fillText(t,x,yy,maxW); else g.fillText(t,x,yy); }
+  var bg=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#04050A';
+  var ink=getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()||'#EDF0F7';
+  var muted=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#8A90A6';
+  var accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#2FD3C6';
+  var cardW=200, cardH=Math.round(200*CH/CW);
+  var needH=pad+28+8+cardH+20+30+20+20+20+120+pad;
+  rc.height=Math.max(needH,500); g.fillStyle=bg; g.fillRect(0,0,rc.width,rc.height);
+  txt('HoloGrade Report',pad,y+20,'bold 20px "Space Grotesk",sans-serif',accent); y+=36;
+  txt(new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString(),pad,y+12,'12px "JetBrains Mono",monospace',muted); y+=24;
+  if(S.flatData){
+    var fc=document.createElement('canvas'); fc.width=CW; fc.height=CH;
+    fc.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(S.flatData),CW,CH),0,0);
+    g.drawImage(fc,pad,y,cardW,cardH);
+  }
+  var rx=pad+cardW+20, ry=y;
+  var name=$('idName').textContent||'Unknown card';
+  txt(name,rx,ry+16,'bold 18px "Space Grotesk",sans-serif',ink,W-rx-pad); ry+=28;
+  var meta=$('idMeta').textContent; if(meta) { txt(meta,rx,ry+12,'12px "JetBrains Mono",monospace',muted,W-rx-pad); ry+=22; }
+  ry+=8;
+  var grade=$('grade').textContent||'-';
+  txt(grade,rx,ry+28,'bold 32px "Space Grotesk",sans-serif',accent); ry+=44;
+  txt($('miniLR').textContent+' · '+$('miniTB').textContent,rx,ry+12,'13px "JetBrains Mono",monospace',muted); ry+=22;
+  if(S.ai&&S.ai.summary){ txt('AI: '+S.ai.summary,rx,ry+12,'12px "Space Grotesk",sans-serif',muted,W-rx-pad); ry+=20; }
+  y+=cardH+16;
+  var rows=$('gRows').querySelectorAll('tr'); var ty=Math.max(y,ry+8);
+  g.strokeStyle=muted; g.lineWidth=0.5; g.beginPath(); g.moveTo(pad,ty); g.lineTo(W-pad,ty); g.stroke(); ty+=16;
+  txt('Grader estimates',pad,ty+12,'bold 14px "Space Grotesk",sans-serif',ink); ty+=24;
+  rows.forEach(function(tr){
+    var cells=tr.querySelectorAll('td');
+    if(cells.length>=3){
+      txt(cells[0].childNodes[0].textContent,pad,ty+12,'bold 13px "Space Grotesk",sans-serif',ink);
+      txt(cells[1].textContent,pad+100,ty+12,'13px "JetBrains Mono",monospace',muted);
+      txt(cells[2].textContent.replace(/\s+/g,' '),pad+200,ty+12,'bold 13px "JetBrains Mono",monospace',ink);
+      ty+=20;
+    }
+  });
+  ty+=12; txt('holograde.uk · estimate from a photo, not an official grade',pad,ty+10,'11px "JetBrains Mono",monospace',muted);
+  rc.height=ty+24+pad; g.fillStyle=bg; g.fillRect(0,ty+22,W,pad+10);
+  return rc;
+}
+$('saveReport').addEventListener('click',function(){
+  var rc=generateReport(); if(!rc) return;
+  var a=document.createElement('a'); a.download='holograde-report.png'; a.href=rc.toDataURL('image/png'); a.click();
+});
+
+/* ---------- scan history ---------- */
+var HISTORY_KEY='holograde_history';
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HISTORY_KEY))||[]; }catch(e){ return []; } }
+function saveHistory(h){ try{ localStorage.setItem(HISTORY_KEY,JSON.stringify(h.slice(0,20))); }catch(e){} }
+function addToHistory(){
+  if(!S.flatData) return;
+  var fc=document.createElement('canvas'); fc.width=CW; fc.height=CH;
+  fc.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(S.flatData),CW,CH),0,0);
+  var thumb=document.createElement('canvas'); thumb.width=126; thumb.height=Math.round(126*CH/CW);
+  thumb.getContext('2d').drawImage(fc,0,0,thumb.width,thumb.height);
+  var entry={
+    name:($('idName').textContent||'').slice(0,60)||'Unknown',
+    grade:$('grade').textContent||'-',
+    date:new Date().toISOString().slice(0,10),
+    thumb:thumb.toDataURL('image/jpeg',0.6)
+  };
+  var h=loadHistory(); h.unshift(entry); saveHistory(h);
+}
+function renderHistory(){
+  var h=loadHistory(), box=$('historyBox'), list=$('historyList');
+  list.textContent=''; box.hidden=h.length===0;
+  h.forEach(function(e){
+    var li=document.createElement('li');
+    var img=document.createElement('img'); img.className='hthumb'; img.src=e.thumb||''; img.alt='';
+    var nm=document.createElement('div'); nm.className='hname'; nm.textContent=e.name||'Unknown';
+    var gr=document.createElement('div'); gr.className='hgrade'; gr.textContent=e.grade||'-';
+    var dt=document.createElement('div'); dt.className='hdate'; dt.textContent=e.date||'';
+    li.appendChild(img); li.appendChild(nm); li.appendChild(gr); li.appendChild(dt); list.appendChild(li);
+  });
+}
+$('clearHistory').addEventListener('click',function(){ try{ localStorage.removeItem(HISTORY_KEY); }catch(e){} renderHistory(); });
+renderHistory();
+
+/* ---------- enable save after scan ---------- */
+var origFinishScan=finishScan;
+finishScan=function(){
+  origFinishScan();
+  $('saveReport').disabled=false;
+  if(!S.wantAi||S.label==='Sample card'||S.label==='Worn sample') return;
+  setTimeout(addToHistory,200);
+};
+
 renderSources();
 })();
 </script>

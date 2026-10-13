@@ -18,12 +18,13 @@ Single-file static web app (`index.html`: HTML, CSS and one IIFE script). No bui
 - Border detection assumes a standard bordered card.
 
 ## Known gaps / next work
-1. **Rate limiting and daily cap.** The `/api/inspect` Vercel serverless function holds the Anthropic key server-side (`ANTHROPIC_API_KEY` env var). Add per-IP rate limiting and a global daily cap, and fall back to measure-only when the cap is hit.
+1. **Rate limiting and daily cap.** The `/api/inspect` Vercel serverless function holds the Gemini key server-side (`GEMINI_API_KEY` env var). Add per-IP rate limiting and a global daily cap, and fall back to measure-only when the cap is hit.
 2. **Free name lookup option.** In-browser OCR (Tesseract.js) on the name/number crop plus a free card database (e.g. TCGdex), with manual entry as a fallback.
 3. **On-device face check.** An early experiment (blotchiness and dark flecks in pale areas) gave numbers on one worn card but cannot be thresholded without clean real-card photos. Needs a small calibration set.
 4. **Calibrate** `TH` (corner/edge/surface thresholds) against cards with known grades.
 5. Privacy page, since images go to a third party when AI is on.
+6. **Back of card.** Measure back centering and condition for a full grade estimate.
 
 ## Testing
 - `node tests/graders.js` for estimate logic and a syntax check.
-- For UI checks use Playwright against `index.html`. Stub the AI by intercepting `fetch` calls to `api.anthropic.com` and returning a canned JSON response.
+- For UI checks use Playwright against `index.html`. Stub the AI by intercepting `fetch` calls to the Gemini endpoint and returning a canned JSON response.
