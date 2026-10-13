@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   });
 
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + key;
-  const delays = [0, 2000, 4000, 8000];
+  const delays = [0, 1000, 2000];
 
   for (let attempt = 0; attempt < delays.length; attempt++) {
     if (delays[attempt]) await new Promise(r => setTimeout(r, delays[attempt]));

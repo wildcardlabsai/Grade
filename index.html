@@ -1751,57 +1751,41 @@ async function identify(){
   var ctl=new AbortController(); idCtl=ctl;
   $('idResult').hidden=true; $('identify').disabled=true; $('stopId').hidden=false; $('idNote').textContent='Reading and inspecting the card...';
   S.aiTried=true; setStep('read','run','Reading the printed text'); $('skipAi').hidden=false;
-  var retries=[0,3000,6000], payload=JSON.stringify({image:b64}), lastErr;
-  for(var att=0;att<retries.length;att++){
-    if(retries[att]) {
-      $('idNote').textContent='AI busy, retrying in '+Math.round(retries[att]/1000)+'s...';
-      await new Promise(function(ok){ setTimeout(ok,retries[att]); });
-    }
+  var payload=JSON.stringify({image:b64});
+  try{
+    var resp=await fetch('/api/inspect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      signal:ctl.signal,
+      body:payload
+    });
     if(idCtl!==ctl) return;
-    try{
-      var resp=await fetch('/api/inspect',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        signal:ctl.signal,
-        body:payload
-      });
-      if(idCtl!==ctl) return;
-      if(resp.status===429||resp.status===503){
-        lastErr={code:'rate_limited',message:'AI service is busy.'};
-        if(att<retries.length-1) continue;
-        throw lastErr;
-      }
-      if(!resp.ok){
-        var err=await resp.json().catch(function(){return {};});
-        throw {code:'api_error',message:err.error||'Server error '+resp.status};
-      }
-      var r=await resp.json();
-      idCtl=null; $('stopId').hidden=true; $('identify').disabled=false;
-      $('idNote').textContent='Card image sent for AI reading.';
-      showCard(r); applyInspection(r); render();
-      $('identify').textContent='Run again';
-      $('skipAi').hidden=true;
-      var rd=$('idName').textContent;
-      setStep('read',S.ai?'ok':'fail',S.ai?(rd+(S.ai.cap<10?' · condition caps at PSA '+S.ai.cap:' · no condition cap')):'No usable reading');
-      tryFinish();
-      return;
-    }catch(e){
-      if(e&&e.name==='AbortError') { lastErr=e; break; }
-      lastErr=e;
-      if(att<retries.length-1&&e&&e.code==='rate_limited') continue;
-      break;
+    if(!resp.ok){
+      var err=await resp.json().catch(function(){return {};});
+      throw {code:'api_error',message:err.error||'Server error '+resp.status};
     }
+    var r=await resp.json();
+    idCtl=null; $('stopId').hidden=true; $('identify').disabled=false;
+    $('idNote').textContent='Card image sent for AI reading.';
+    showCard(r); applyInspection(r); render();
+    $('identify').textContent='Run again';
+    $('skipAi').hidden=true;
+    var rd=$('idName').textContent;
+    setStep('read',S.ai?'ok':'fail',S.ai?(rd+(S.ai.cap<10?' · condition caps at PSA '+S.ai.cap:' · no condition cap')):'No usable reading');
+    tryFinish();
+    return;
+  }catch(e){
+    if(idCtl!==ctl) return;
+    idCtl=null; $('stopId').hidden=true;
+    $('skipAi').hidden=true;
+    var aborted=e&&e.name==='AbortError';
+    var msg=aborted?'Skipped':(e&&e.message)||'Something went wrong. Try again.';
+    setStep('read',aborted?'skip':'fail',msg);
+    setTimeout(tryFinish,0);
+    $('identify').disabled=false;
+    $('identify').textContent='Run again';
+    $('idNote').textContent=aborted?idIdleNote():msg;
   }
-  if(idCtl!==ctl) return;
-  idCtl=null; $('stopId').hidden=true;
-  $('skipAi').hidden=true;
-  var aborted=lastErr&&lastErr.name==='AbortError';
-  var msg=aborted?'Skipped':(lastErr&&lastErr.code)==='rate_limited'?'AI is busy. Tap "Run again" to retry.':(lastErr&&lastErr.message)||'Something went wrong. Try again.';
-  setStep('read',aborted?'skip':'fail',msg);
-  setTimeout(tryFinish,0);
-  $('identify').disabled=false;
-  $('identify').textContent='Run again';
-  $('idNote').textContent=aborted?idIdleNote():msg;
 }
 
 $('worn').addEventListener('click',function(){ var s=makeSample(true); S.note='Worn sample loaded. It has corner whitening, edge nicks and a few border scratches.'; S.wantAi=false; startScan(); setSource(s.canvas,s.quad,'Worn sample'); S.cornersOk=true; S.scanReady=true; setStep('find','ok','Sample card'); setStep('read','skip','Not run for samples'); });
@@ -1827,17 +1811,23 @@ window.addEventListener('dragover',function(e){ e.preventDefault(); });
 window.addEventListener('drop',function(e){ e.preventDefault(); var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f&&e.target!==dz&&!dz.contains(e.target)) loadFile(f); });
 /* ---------- save report image ---------- */
 function generateReport(){
-  var W=600, pad=24, y=pad;
-  var rc=document.createElement('canvas'); rc.width=W;
-  var g=rc.getContext('2d');
-  function txt(t,x,yy,font,fill,maxW){ g.font=font; g.fillStyle=fill; if(maxW) g.fillText(t,x,yy,maxW); else g.fillText(t,x,yy); }
+  var W=600, pad=24;
   var bg=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#04050A';
   var ink=getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()||'#EDF0F7';
   var muted=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#8A90A6';
   var accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#2FD3C6';
   var cardW=200, cardH=Math.round(200*CH/CW);
-  var needH=pad+28+8+cardH+20+30+20+20+20+120+pad;
-  rc.height=Math.max(needH,500); g.fillStyle=bg; g.fillRect(0,0,rc.width,rc.height);
+  var rows=$('gRows').querySelectorAll('tr');
+  var rowCount=0; rows.forEach(function(tr){ if(tr.querySelectorAll('td').length>=3) rowCount++; });
+  var headerH=36+24, cardArea=cardH+16, tableH=16+24+rowCount*20+12+24;
+  var metaH=28+(($('idMeta').textContent)?22:0)+8+44+22+((S.ai&&S.ai.summary)?20:0);
+  var rightH=metaH;
+  var totalH=pad+headerH+Math.max(cardArea,rightH+8)+tableH+pad;
+  var rc=document.createElement('canvas'); rc.width=W; rc.height=Math.max(totalH,500);
+  var g=rc.getContext('2d');
+  function txt(t,x,yy,font,fill,maxW){ g.font=font; g.fillStyle=fill; if(maxW) g.fillText(t,x,yy,maxW); else g.fillText(t,x,yy); }
+  g.fillStyle=bg; g.fillRect(0,0,rc.width,rc.height);
+  var y=pad;
   txt('Holo Grade Report',pad,y+20,'bold 20px "Space Grotesk",sans-serif',accent); y+=36;
   txt(new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString(),pad,y+12,'12px "JetBrains Mono",monospace',muted); y+=24;
   if(S.flatData){
@@ -1855,7 +1845,7 @@ function generateReport(){
   txt($('miniLR').textContent+' · '+$('miniTB').textContent,rx,ry+12,'13px "JetBrains Mono",monospace',muted); ry+=22;
   if(S.ai&&S.ai.summary){ txt('AI: '+S.ai.summary,rx,ry+12,'12px "Space Grotesk",sans-serif',muted,W-rx-pad); ry+=20; }
   y+=cardH+16;
-  var rows=$('gRows').querySelectorAll('tr'); var ty=Math.max(y,ry+8);
+  var ty=Math.max(y,ry+8);
   g.strokeStyle=muted; g.lineWidth=0.5; g.beginPath(); g.moveTo(pad,ty); g.lineTo(W-pad,ty); g.stroke(); ty+=16;
   txt('Grader estimates',pad,ty+12,'bold 14px "Space Grotesk",sans-serif',ink); ty+=24;
   rows.forEach(function(tr){
@@ -1868,7 +1858,6 @@ function generateReport(){
     }
   });
   ty+=12; txt('holograde.uk · estimate from a photo, not an official grade',pad,ty+10,'11px "JetBrains Mono",monospace',muted);
-  rc.height=ty+24+pad; g.fillStyle=bg; g.fillRect(0,ty+22,W,pad+10);
   return rc;
 }
 $('saveReport').addEventListener('click',function(){
