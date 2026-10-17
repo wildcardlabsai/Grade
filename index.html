@@ -181,12 +181,8 @@ a.btn{text-decoration:none}
 .mini b{font-family:var(--font-display);font-weight:700;font-size:24px;line-height:1.1;white-space:nowrap}
 .mini span{color:var(--muted)}
 
-.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;max-width:680px;margin:0 auto}
 .results{display:grid;gap:16px;min-width:0}
-@media (min-width:980px){
-  .layout{grid-template-columns:minmax(0,5fr) minmax(0,6fr);align-items:start}
-  .viewer{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px)}
-}
 
 .panel{position:relative;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;overflow:hidden}
 .panel-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px}
@@ -199,7 +195,7 @@ a.btn{text-decoration:none}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .tools{display:flex;flex-wrap:wrap;gap:6px}
 .tools .btn{min-height:34px;padding:0 10px;font-size:12px}
-.stage{position:relative;display:grid;justify-items:center;-webkit-user-select:none;user-select:none}
+.stage{position:relative;display:grid;justify-items:center;-webkit-user-select:none;user-select:none;touch-action:none}
 .stage canvas{display:block;max-width:100%;height:auto;border-radius:8px;box-shadow:0 0 0 1px var(--line);touch-action:none;-webkit-user-drag:none}
 .cwrap{position:relative;width:min(100%,520px,max(300px,calc((100vh - 250px)*.716)))}
 #flat{width:100%;aspect-ratio:504/704}
@@ -472,6 +468,28 @@ details[open]>summary{margin-bottom:10px}
             <button class="btn primary" id="confirmCorners" type="button" hidden>Corners look good — check borders</button>
           </div>
         </div>
+
+        <section class="panel" id="gradeSec" aria-label="Potential grades">
+          <div class="verdict">
+            <p class="eyebrow">Grade ceiling <span class="chip" id="basis">Measured only</span></p>
+            <p class="grade" id="grade">-</p>
+            <p class="why" id="why"></p>
+          </div>
+          <div class="axes" id="viewerAxes">
+            <div class="axis" id="lr">
+              <p class="eyebrow">Left / Right</p>
+              <p class="ratio"><span id="lrBig">-</span><span class="slash">/</span><span class="lo" id="lrSmall">-</span></p>
+              <div class="split"><i id="lrA"></i><i id="lrB"></i></div>
+              <p class="gaps"><span id="lrGapA"></span><span id="lrGapB"></span></p>
+            </div>
+            <div class="axis" id="tb">
+              <p class="eyebrow">Top / Bottom</p>
+              <p class="ratio"><span id="tbBig">-</span><span class="slash">/</span><span class="lo" id="tbSmall">-</span></p>
+              <div class="split"><i id="tbA"></i><i id="tbB"></i></div>
+              <p class="gaps"><span id="tbGapA"></span><span id="tbGapB"></span></p>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div class="results" id="results">
@@ -505,12 +523,7 @@ details[open]>summary{margin-bottom:10px}
           </div>
         </section>
 
-        <section class="panel" id="gradeSec" aria-label="Potential grades">
-          <div class="verdict">
-            <p class="eyebrow">Grade ceiling <span class="chip" id="basis">Measured only</span></p>
-            <p class="grade" id="grade">-</p>
-            <p class="why" id="why"></p>
-          </div>
+        <section class="panel" id="gradersSec" aria-label="Grader estimates">
           <div class="tablewrap">
             <table class="gt">
               <thead><tr><th>Grader</th><th>Centering</th><th>Overall</th><th>Held back by</th></tr></thead>
@@ -529,20 +542,6 @@ details[open]>summary{margin-bottom:10px}
 
         <section class="panel" id="measureSec" aria-label="Measurements">
           <div class="panel-head"><h2>Measurements</h2><p>From the flattened photo. Ratios list the larger border first.</p></div>
-          <div class="axes">
-            <div class="axis" id="lr">
-              <p class="eyebrow">Left / Right</p>
-              <p class="ratio"><span id="lrBig">-</span><span class="slash">/</span><span class="lo" id="lrSmall">-</span></p>
-              <div class="split"><i id="lrA"></i><i id="lrB"></i></div>
-              <p class="gaps"><span id="lrGapA"></span><span id="lrGapB"></span></p>
-            </div>
-            <div class="axis" id="tb">
-              <p class="eyebrow">Top / Bottom</p>
-              <p class="ratio"><span id="tbBig">-</span><span class="slash">/</span><span class="lo" id="tbSmall">-</span></p>
-              <div class="split"><i id="tbA"></i><i id="tbB"></i></div>
-              <p class="gaps"><span id="tbGapA"></span><span id="tbGapB"></span></p>
-            </div>
-          </div>
           <div>
             <p class="eyebrow">PSA front centering limits, larger border share</p>
             <div class="ladder">
@@ -1539,8 +1538,8 @@ function drawFlat(){
 function redrawAll(){ drawPhoto(); drawFlat(); }
 
 /* ---------- photo handles ---------- */
-var dragCorner=-1;
-function photoPos(e){ var r=photo.getBoundingClientRect(); return [(e.clientX-r.left)*photo.width/r.width,(e.clientY-r.top)*photo.height/r.height,photo.width/r.width]; }
+var dragCorner=-1, dragRect=null;
+function photoPos(e,rect){ var r=rect||photo.getBoundingClientRect(); return [(e.clientX-r.left)*photo.width/r.width,(e.clientY-r.top)*photo.height/r.height,photo.width/r.width]; }
 function nearestCorner(p){
   var best=-1,bd=1e9,i;
   for(i=0;i<4;i++){ var d=Math.hypot(p[0]-S.quad[i][0],p[1]-S.quad[i][1]); if(d<bd){bd=d;best=i;} }
@@ -1558,20 +1557,21 @@ function showLoupe(i,k){
 }
 photo.addEventListener('pointerdown',function(e){
   if(!S.src) return;
-  var p=photoPos(e), i=nearestCorner(p);
-  if(i<0) return;
+  dragRect=photo.getBoundingClientRect();
+  var p=photoPos(e,dragRect), i=nearestCorner(p);
+  if(i<0){ dragRect=null; return; }
   dragCorner=i; photo.setPointerCapture(e.pointerId); e.preventDefault();
   showLoupe(i,p[2]);
 });
 photo.addEventListener('pointermove',function(e){
   if(!S.src) return;
-  var p=photoPos(e);
-  if(dragCorner<0){ photo.style.cursor=nearestCorner(p)>=0?'grab':'default'; return; }
+  if(dragCorner<0){ var p=photoPos(e); photo.style.cursor=nearestCorner(p)>=0?'grab':'default'; return; }
+  var p=photoPos(e,dragRect);
   S.quad[dragCorner]=[clamp(p[0],0,S.sw),clamp(p[1],0,S.sh)];
   showLoupe(dragCorner,p[2]);
   drawPhoto(); schedule(true);
 });
-function endCorner(){ dragCorner=-1; loupe.hidden=true; }
+function endCorner(){ dragCorner=-1; dragRect=null; loupe.hidden=true; }
 photo.addEventListener('pointerup',endCorner);
 photo.addEventListener('pointercancel',endCorner);
 
