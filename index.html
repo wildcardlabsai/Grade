@@ -1378,7 +1378,8 @@ function refresh(detect){
   flatCtx.putImageData(new ImageData(out,CW,CH),0,0);
   S.flatData=out;
   if(detect||!S.b) runDetect();
-  drawPhoto(); drawFlat(); render(); sayNote(); scheduleCond();
+  drawPhoto(); drawFlat();
+  if(dragCorner<0){ render(); sayNote(); scheduleCond(); }
 }
 function sayNote(){ say(((S.note||'')+' '+(S.warn||'')).trim()); }
 function runDetect(){
@@ -1538,8 +1539,8 @@ function drawFlat(){
 function redrawAll(){ drawPhoto(); drawFlat(); }
 
 /* ---------- photo handles ---------- */
-var dragCorner=-1, dragRect=null;
-function photoPos(e,rect){ var r=rect||photo.getBoundingClientRect(); return [(e.clientX-r.left)*photo.width/r.width,(e.clientY-r.top)*photo.height/r.height,photo.width/r.width]; }
+var dragCorner=-1, photoVhWidth='';
+function photoPos(e){ var r=photo.getBoundingClientRect(); return [(e.clientX-r.left)*photo.width/r.width,(e.clientY-r.top)*photo.height/r.height,photo.width/r.width]; }
 function nearestCorner(p){
   var best=-1,bd=1e9,i;
   for(i=0;i<4;i++){ var d=Math.hypot(p[0]-S.quad[i][0],p[1]-S.quad[i][1]); if(d<bd){bd=d;best=i;} }
@@ -1557,21 +1558,26 @@ function showLoupe(i,k){
 }
 photo.addEventListener('pointerdown',function(e){
   if(!S.src) return;
-  dragRect=photo.getBoundingClientRect();
-  var p=photoPos(e,dragRect), i=nearestCorner(p);
-  if(i<0){ dragRect=null; return; }
+  var p=photoPos(e), i=nearestCorner(p);
+  if(i<0) return;
   dragCorner=i; photo.setPointerCapture(e.pointerId); e.preventDefault();
+  photoVhWidth=photo.style.width;
+  photo.style.width=photo.getBoundingClientRect().width+'px';
   showLoupe(i,p[2]);
 });
 photo.addEventListener('pointermove',function(e){
   if(!S.src) return;
-  if(dragCorner<0){ var p=photoPos(e); photo.style.cursor=nearestCorner(p)>=0?'grab':'default'; return; }
-  var p=photoPos(e,dragRect);
+  var p=photoPos(e);
+  if(dragCorner<0){ photo.style.cursor=nearestCorner(p)>=0?'grab':'default'; return; }
   S.quad[dragCorner]=[clamp(p[0],0,S.sw),clamp(p[1],0,S.sh)];
   showLoupe(dragCorner,p[2]);
   drawPhoto(); schedule(true);
 });
-function endCorner(){ dragCorner=-1; dragRect=null; loupe.hidden=true; }
+function endCorner(){
+  dragCorner=-1; loupe.hidden=true;
+  if(photoVhWidth){ photo.style.width=photoVhWidth; photoVhWidth=''; }
+  if(S.src){ render(); sayNote(); scheduleCond(); }
+}
 photo.addEventListener('pointerup',endCorner);
 photo.addEventListener('pointercancel',endCorner);
 
