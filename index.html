@@ -1539,8 +1539,11 @@ function drawFlat(){
 function redrawAll(){ drawPhoto(); drawFlat(); }
 
 /* ---------- photo handles ---------- */
-var dragCorner=-1, photoVhWidth='';
-function photoPos(e){ var r=photo.getBoundingClientRect(); return [(e.clientX-r.left)*photo.width/r.width,(e.clientY-r.top)*photo.height/r.height,photo.width/r.width]; }
+var dragCorner=-1, dragStart=null, dragCornerStart=null, dragK=1, photoVhWidth='';
+function photoPos(e){
+  var r=photo.getBoundingClientRect(), kx=photo.width/r.width;
+  return [(e.clientX-r.left)*kx,(e.clientY-r.top)*kx,kx];
+}
 function nearestCorner(p){
   var best=-1,bd=1e9,i;
   for(i=0;i<4;i++){ var d=Math.hypot(p[0]-S.quad[i][0],p[1]-S.quad[i][1]); if(d<bd){bd=d;best=i;} }
@@ -1558,25 +1561,30 @@ function showLoupe(i,k){
 }
 photo.addEventListener('pointerdown',function(e){
   if(!S.src) return;
-  var p=photoPos(e), i=nearestCorner(p);
-  if(i<0) return;
-  dragCorner=i; photo.setPointerCapture(e.pointerId); e.preventDefault();
+  var r=photo.getBoundingClientRect();
   photoVhWidth=photo.style.width;
-  photo.style.width=photo.getBoundingClientRect().width+'px';
-  showLoupe(i,p[2]);
+  photo.style.width=r.width+'px';
+  var p=photoPos(e), i=nearestCorner(p);
+  if(i<0){ photo.style.width=photoVhWidth; photoVhWidth=''; return; }
+  dragK=photo.width/r.width;
+  dragStart=[e.clientX,e.clientY];
+  dragCornerStart=[S.quad[i][0],S.quad[i][1]];
+  dragCorner=i; photo.setPointerCapture(e.pointerId); e.preventDefault();
+  showLoupe(i,dragK);
 });
 photo.addEventListener('pointermove',function(e){
   if(!S.src) return;
-  var p=photoPos(e);
-  if(dragCorner<0){ photo.style.cursor=nearestCorner(p)>=0?'grab':'default'; return; }
-  S.quad[dragCorner]=[clamp(p[0],0,S.sw),clamp(p[1],0,S.sh)];
-  showLoupe(dragCorner,p[2]);
+  if(dragCorner<0){ var p=photoPos(e); photo.style.cursor=nearestCorner(p)>=0?'grab':'default'; return; }
+  var nx=dragCornerStart[0]+(e.clientX-dragStart[0])*dragK;
+  var ny=dragCornerStart[1]+(e.clientY-dragStart[1])*dragK;
+  S.quad[dragCorner]=[clamp(nx,0,S.sw),clamp(ny,0,S.sh)];
+  showLoupe(dragCorner,dragK);
   drawPhoto(); schedule(true);
 });
 function endCorner(){
-  dragCorner=-1; loupe.hidden=true;
+  dragCorner=-1; dragStart=null; dragCornerStart=null; loupe.hidden=true;
   if(photoVhWidth){ photo.style.width=photoVhWidth; photoVhWidth=''; }
-  if(S.src){ render(); sayNote(); scheduleCond(); }
+  if(S.src){ drawPhoto(); render(); sayNote(); scheduleCond(); }
 }
 photo.addEventListener('pointerup',endCorner);
 photo.addEventListener('pointercancel',endCorner);
